@@ -1,0 +1,59 @@
+class BookingDetailModel {
+  List ticketCostingDetails;
+  Map bookingInfo;
+  Map bookingCharge;
+  String thresholdLimit;
+  List paymentGateway;
+  String paymentCurrency;
+  List agentDetails;
+  List additionalCharges;
+  List receivedPayment;
+  List queueStatus;
+  Map flightSeg;
+  String totalReceivedAmount;
+  List forTicket;
+  String totalRefundAmt;
+  Map data;
+  String bookingRef;
+  List forTicketVoid;
+
+  BookingDetailModel(
+    this.ticketCostingDetails,
+    this.bookingInfo,
+    this.bookingCharge,
+    this.thresholdLimit,
+    this.paymentGateway,
+    this.paymentCurrency,
+    this.agentDetails,
+    this.additionalCharges,
+    this.receivedPayment,
+    this.queueStatus,
+    this.flightSeg,
+    this.totalReceivedAmount,
+    this.forTicket,
+    this.totalRefundAmt,
+    this.data,
+    this.bookingRef,
+    this.forTicketVoid,
+  );
+
+  BookingDetailModel.fromJson(Map<String, dynamic> json) {
+    ticketCostingDetails = json["TicketCostingDetails"];
+    bookingInfo = json["BookingInfo"];
+    bookingCharge = json["BookingCharge"];
+    thresholdLimit = json["ThresholdLimit"].toString();
+    paymentGateway = json["PayemtnGateway"];
+    paymentCurrency = json["PaymentCurrencyER"].toString();
+    agentDetails = json["AgentDetails"];
+    additionalCharges = json["AdditionalCharges"];
+    receivedPayment = json["ReceiviedPayment"];
+    queueStatus = json["QueueStatus"];
+    flightSeg = json["flightSegementItinerary"];
+    totalReceivedAmount = json["TotalRecivedAmount"].toString();
+    forTicket = json["forTicket"];
+    totalRefundAmt = json["TotalRefundAmount"].toString();
+    data = json["Data"];
+    bookingRef = json["BookingRef"];
+    forTicketVoid = json["forTicketVoid"];
+  }
+}

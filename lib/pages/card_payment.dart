@@ -1,0 +1,577 @@
+import 'package:babylon/auth/auth_landing_page.dart';
+import 'package:babylon/constraints.dart';
+import 'package:babylon/pages/agencyInfo.dart';
+import 'package:babylon/pages/booking_confirmation.dart';
+import 'package:babylon/pages/bookings.dart';
+import 'package:babylon/pages/branches.dart';
+import 'package:babylon/pages/profile.dart';
+import 'package:babylon/pages/reports.dart';
+import 'package:babylon/pages/users.dart';
+import 'package:babylon/svgIcons.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class CardPayment extends StatefulWidget {
+  //const CardPayment({ Key? key }) : super(key: key);
+
+  @override
+  _CardPaymentState createState() => _CardPaymentState();
+}
+
+class _CardPaymentState extends State<CardPayment> {
+  bool showDrawer = false;
+  int index = 0;
+  @override
+  Widget build(BuildContext context) {
+    var screenWidth = MediaQuery.of(context).size.width;
+    var screenHeight = MediaQuery.of(context).size.height;
+    return Scaffold(
+      appBar: showDrawer
+          ? AppBar(
+              toolbarHeight: 0,
+              backgroundColor: Colors.black87,
+            )
+          : AppBar(
+              backgroundColor: Colors.black87,
+              title: Text(
+                "PAYMENT",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontFamily: 'Montserrat-Bold',
+                ),
+              ),
+              centerTitle: true,
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    Icons.menu,
+                    size: 32,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      showDrawer = !showDrawer;
+                    });
+                  },
+                ),
+              ],
+              iconTheme: IconThemeData(
+                color: Colors.white,
+              ),
+            ),
+      body: (showDrawer)
+          ? Container(
+              width: screenWidth,
+              height: screenHeight,
+              color: Colors.black,
+              child: ListView(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      top: 10,
+                      right: 10,
+                      bottom: 20,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        //Logo
+                        Padding(
+                          padding: EdgeInsets.only(
+                            left: 25,
+                          ),
+                          child: Container(
+                            child: Image.asset(
+                              "assets/images/babylon logo - white-03.png",
+                            ),
+                          ),
+                        ),
+                        //close icon
+                        IconButton(
+                          icon: Icon(
+                            Icons.close_rounded,
+                            color: Colors.white,
+                            size: 32,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              showDrawer = false;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      if (mounted) {
+                        setState(() {
+                          showDrawer = false;
+                        });
+                      }
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                      ),
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.speed,
+                          color: Colors.white,
+                        ),
+                        title: Text(
+                          "Dashboard",
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Divider(
+                    color: Colors.grey,
+                    indent: 32,
+                    endIndent: 32,
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        showDrawer = false;
+                      });
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => Bookings()));
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                      ),
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.calendar_today,
+                          color: Colors.white,
+                        ),
+                        title: Text(
+                          "Bookings",
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Divider(
+                    color: Colors.grey,
+                    indent: 32,
+                    endIndent: 32,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: 20,
+                      right: 20,
+                    ),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          showDrawer = false;
+                        });
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) => Reports()));
+                      },
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.equalizer_rounded,
+                          color: Colors.white,
+                        ),
+                        title: Text(
+                          "Reports",
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Divider(
+                    color: Colors.grey,
+                    indent: 32,
+                    endIndent: 32,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: 20,
+                      right: 20,
+                    ),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          showDrawer = false;
+                        });
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) => Profile()));
+                      },
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.person_rounded,
+                          color: Colors.white,
+                        ),
+                        title: Text(
+                          "My Profile",
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Divider(
+                    color: Colors.grey,
+                    indent: 32,
+                    endIndent: 32,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: 20,
+                      right: 20,
+                    ),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          showDrawer = false;
+                        });
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => AgencyInfo()));
+                      },
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.info_outline,
+                          color: Colors.white,
+                        ),
+                        title: Text(
+                          "Agency Information",
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Divider(
+                    color: Colors.grey,
+                    indent: 32,
+                    endIndent: 32,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: 20,
+                      right: 20,
+                    ),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          showDrawer = false;
+                        });
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => Branches()));
+                      },
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.speed,
+                          color: Colors.white,
+                        ),
+                        title: Text(
+                          "Branch Management",
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Divider(
+                    color: Colors.grey,
+                    indent: 32,
+                    endIndent: 32,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: 20,
+                      right: 20,
+                    ),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          showDrawer = false;
+                        });
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) => Users()));
+                      },
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.speed,
+                          color: Colors.white,
+                        ),
+                        title: Text(
+                          "User Management",
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Divider(
+                    color: Colors.grey,
+                    indent: 32,
+                    endIndent: 32,
+                  ),
+                  GestureDetector(
+                    onTap: () async {
+                      SharedPreferences prefs =
+                          await SharedPreferences.getInstance();
+                      prefs.remove('token');
+                      Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => AuthLandingPage()),
+                          (route) => false);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                      ),
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.logout,
+                          color: Colors.white,
+                        ),
+                        title: Text(
+                          "Logout",
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Divider(
+                    color: Colors.grey,
+                    indent: 32,
+                    endIndent: 32,
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: 10,
+                      right: 10,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        MaterialButton(
+                          onPressed: () {},
+                          child: Row(
+                            children: [
+                              whiteCurrency,
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  "Currency",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.expand_more,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          height: 50,
+                          child: VerticalDivider(
+                            color: Colors.grey,
+                          ),
+                        ),
+                        MaterialButton(
+                          onPressed: () {},
+                          child: Row(
+                            children: [
+                              metroLanguage,
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  "Language",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.expand_more,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: 25.0,
+                horizontal: 20.0,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 5.0,
+                        ),
+                        child: Text(
+                          'Payment to: Babylon Booking',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat-Bold',
+                            fontSize: 16.0,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 20.0,
+                      ),
+                      TextField(
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: 'Card Number*',
+                        ),
+                      ),
+                      SizedBox(
+                        height: 20.0,
+                      ),
+                      TextField(
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: 'Cardholder Name*',
+                        ),
+                      ),
+                      SizedBox(
+                        height: 20.0,
+                      ),
+                      TextField(
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: 'Expiry Date*',
+                        ),
+                      ),
+                      SizedBox(
+                        height: 20.0,
+                      ),
+                      TextField(
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: 'CVV Code*',
+                        ),
+                      ),
+                      SizedBox(
+                        height: 20.0,
+                      ),
+                      Row(
+                        children: [
+                          Text("3 digits on back of your card"),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "2,450.45 TL",
+                        style: TextStyle(
+                          fontFamily: 'Montserrat-Bold',
+                          fontSize: 24.0,
+                        ),
+                      ),
+                      SizedBox(
+                        height: 10.0,
+                      ),
+                      Container(
+                        width: 200.0,
+                        child: Text(
+                            "You will be redirected to a payment gateway to pay"),
+                      ),
+                      SizedBox(
+                        height: 28.0,
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: MaterialButton(
+                              color: primaryColor,
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => BookingConfirmation(),
+                                  ),
+                                );
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18.0,
+                                  horizontal: 10.0,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "CONFIRM",
+                                      style: TextStyle(
+                                        fontFamily: 'Montserrat-Bold',
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 5.0,
+                                    ),
+                                    Icon(
+                                      Icons.check,
+                                      size: 25.0,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 20.0,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+}
