@@ -53,6 +53,7 @@ class _FlightDetailsState extends State<FlightDetails> {
   bool loading = false;
   bool showDrawer = false;
   var genFunc = GenFunc();
+  List paymentMethodListToSend = [];
 
   final sessionId;
   final refNo;
@@ -101,7 +102,6 @@ class _FlightDetailsState extends State<FlightDetails> {
 
     if (response.statusCode == 200) {
       var data = await response.stream.bytesToString();
-      print(data);
       var body = jsonDecode(data);
       var dataInJson = FlightCheckoutModel.fromJson(body);
       setState(() {
@@ -114,6 +114,13 @@ class _FlightDetailsState extends State<FlightDetails> {
       );
       if (dataInJson.message["Code"] == "SUCCESS") {
         //booking confirmed
+        var paymentMethodsListLength =
+            dataInJson.additionalInfo["PaymentMode"].length;
+        var paymentMethodsList = dataInJson.additionalInfo["PaymentMode"];
+        for (var i = 0; i < paymentMethodsListLength; i++) {
+          paymentMethodListToSend.add(paymentMethodsList[i]);
+        }
+        for (var i = 0; i <= paymentMethodsListLength; i++) {}
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -121,6 +128,19 @@ class _FlightDetailsState extends State<FlightDetails> {
               sessionId: sessionId,
               refNo: refNo,
               amount: amt,
+              passportReq:
+                  dataInJson.mandatoryInfo["Passport"] == "y" ? true : false,
+              dobReq: dataInJson.mandatoryInfo["DOB"] == "y" ? true : false,
+              hesCodeReq:
+                  dataInJson.mandatoryInfo["HES_Code"] == "y" ? true : false,
+              idCardReq:
+                  dataInJson.mandatoryInfo["IDCard"] == "y" ? true : false,
+              contactDetailsReq:
+                  dataInJson.mandatoryInfo["ContactDetails"] == "y"
+                      ? true
+                      : false,
+              paymentMethods: paymentMethodListToSend,
+              passengers: api["APL"]["AP"],
             ),
           ),
         );
@@ -781,6 +801,8 @@ class _FlightDetailsState extends State<FlightDetails> {
                                                                 tax: api["TT"],
                                                                 total:
                                                                     api["TGP"],
+                                                                ap: api["APL"]
+                                                                    ["AP"],
                                                               )));
                                                 },
                                                 child: Text("Fare Breakup"),

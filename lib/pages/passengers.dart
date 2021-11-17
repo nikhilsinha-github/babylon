@@ -288,7 +288,7 @@ class _PassengerState extends State<Passenger> {
                           color: Color.fromRGBO(249, 190, 6, 1),
                         ),
                         onPressed: () {
-                          if (infant < 4) {
+                          if (infant < 4 && infant < adult) {
                             setState(() {
                               infant = infant + 1;
                             });

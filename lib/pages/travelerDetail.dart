@@ -1,19 +1,38 @@
 import 'package:babylon/main.dart';
+import 'package:babylon/pages/date_picker.dart';
 import 'package:babylon/pages/payment_method.dart';
 import 'package:babylon/svgIcons.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:syncfusion_flutter_datepicker/datepicker.dart';
+import 'package:intl/intl.dart';
 
 class TravelerDetail extends StatefulWidget {
   final String sessionId;
   final String refNo;
   final String amount;
+  final bool passportReq;
+  final bool dobReq;
+  final bool hesCodeReq;
+  final bool idCardReq;
+  final bool contactDetailsReq;
+  final List paymentMethods;
+  final String dobSelected;
+  final String expDate;
+  final List passengers;
   const TravelerDetail({
     Key key,
     this.sessionId,
     this.refNo,
     this.amount,
+    this.passportReq,
+    this.dobReq,
+    this.hesCodeReq,
+    this.idCardReq,
+    this.contactDetailsReq,
+    this.paymentMethods,
+    this.dobSelected,
+    this.expDate,
+    this.passengers,
   }) : super(key: key);
 
   @override
@@ -21,12 +40,21 @@ class TravelerDetail extends StatefulWidget {
         this.sessionId,
         this.refNo,
         this.amount,
+        this.passportReq,
+        this.dobReq,
+        this.hesCodeReq,
+        this.idCardReq,
+        this.contactDetailsReq,
+        this.paymentMethods,
+        this.dobSelected,
+        this.expDate,
+        this.passengers,
       );
 }
 
 class _TravelerDetailState extends State<TravelerDetail> {
   bool showDrawer = false;
-  String title = "Mr.";
+  String title = "Mr";
   String firstName = "";
   String middleName = "";
   String lastName = "";
@@ -38,17 +66,77 @@ class _TravelerDetailState extends State<TravelerDetail> {
   String country;
   String expiryDate = "";
   String nationality = "";
+  Map m = {
+    "sessionId": "",
+    "refNo": "",
+    "amount": "",
+    "passportReq": "",
+    "dobReq": "",
+    "hesCodeReq": "",
+    "idCardReq": "",
+    "contactDetailsReq": "",
+    "paymentMethods": "",
+    "dobSelected": "",
+    "expDate": "",
+    "passengers": "",
+  };
+  int pl = 0;
   bool showAllBoxes = false;
   bool showDOBPicker = false;
+  bool showExpDatePicker = false;
 
   final sessionId;
   final refNo;
   final amount;
+  final passportReq;
+  final dobReq;
+  final hesCodeReq;
+  final idCardReq;
+  final contactDetailsReq;
+  final paymentMethods;
+  final dobSelected;
+  final expDate;
+  final passengers;
   _TravelerDetailState(
     this.sessionId,
     this.refNo,
     this.amount,
+    this.passportReq,
+    this.dobReq,
+    this.hesCodeReq,
+    this.idCardReq,
+    this.contactDetailsReq,
+    this.paymentMethods,
+    this.dobSelected,
+    this.expDate,
+    this.passengers,
   );
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    if (passportReq) {
+      setState(() {
+        showAllBoxes = true;
+      });
+    }
+    if (dobSelected != null || dobSelected != "") {
+      setState(() {
+        dob = dobSelected;
+      });
+    }
+    if (expDate != null || expDate != "") {
+      setState(() {
+        expiryDate = expDate;
+      });
+    }
+    for (var i = 0; i < passengers.length; i++) {
+      setState(() {
+        pl = pl + int.parse(passengers[i]["PC"]);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -406,11 +494,11 @@ class _TravelerDetailState extends State<TravelerDetail> {
                     ],
                   ),
                 )
-              : Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      child: Column(
+              : SingleChildScrollView(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(pl, (i) {
+                      return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
@@ -420,7 +508,7 @@ class _TravelerDetailState extends State<TravelerDetail> {
                               left: 10,
                             ),
                             child: Text(
-                              "Traveler 1 (Adult)",
+                              "Traveler 1 (${passengers[i]["PT"]})",
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -463,8 +551,8 @@ class _TravelerDetailState extends State<TravelerDetail> {
                                                 Icons.expand_more,
                                               ),
                                               items: [
-                                                'Mr.',
-                                                'Mrs.',
+                                                'Mr',
+                                                'Mrs',
                                               ].map(
                                                 (val) {
                                                   return DropdownMenuItem<
@@ -568,6 +656,7 @@ class _TravelerDetailState extends State<TravelerDetail> {
                             ),
                             child: Row(
                               children: [
+                                //Dob
                                 Expanded(
                                   child: Padding(
                                     padding: const EdgeInsets.only(
@@ -583,48 +672,149 @@ class _TravelerDetailState extends State<TravelerDetail> {
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Padding(
-                                        padding: const EdgeInsets.only(
-                                          left: 10,
+                                        padding: EdgeInsets.only(
+                                          left: dob != "" ? 0 : 10,
                                         ),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.start,
-                                          children: [
-                                            IconButton(
-                                              icon: FaIcon(
-                                                FontAwesomeIcons.calendarAlt,
-                                                color: Colors.grey,
-                                              ),
-                                              onPressed: () {
-                                                setState(() {
-                                                  showDOBPicker = true;
-                                                });
-                                              },
-                                            ),
-                                            Text.rich(
-                                              TextSpan(
+                                        child: dob != "" && dob != null
+                                            ? Center(
+                                                child: GestureDetector(
+                                                  onTap: () {
+                                                    Navigator.pushReplacement(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            DatePicker(
+                                                          field: "dob",
+                                                          sessionId: sessionId,
+                                                          refNo: refNo,
+                                                          amount: amount,
+                                                          passportReq:
+                                                              passportReq,
+                                                          dobReq: dobReq,
+                                                          hesCodeReq:
+                                                              hesCodeReq,
+                                                          idCardReq: idCardReq,
+                                                          contactDetailsReq:
+                                                              contactDetailsReq,
+                                                          paymentMethods:
+                                                              paymentMethods,
+                                                          dobSelected: dob,
+                                                          expDate: expiryDate,
+                                                          passengers:
+                                                              passengers,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                  child: Text(DateFormat(
+                                                          "dd MMM yyyy")
+                                                      .format(
+                                                          DateTime.parse(dob))
+                                                      .toString()),
+                                                ),
+                                              )
+                                            : Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.start,
                                                 children: [
-                                                  TextSpan(
-                                                    text: "Date of Birth",
-                                                    style: TextStyle(
+                                                  IconButton(
+                                                    icon: FaIcon(
+                                                      FontAwesomeIcons
+                                                          .calendarAlt,
                                                       color: Colors.grey,
                                                     ),
+                                                    onPressed: () {
+                                                      Navigator.pushReplacement(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              DatePicker(
+                                                            field: "dob",
+                                                            sessionId:
+                                                                sessionId,
+                                                            refNo: refNo,
+                                                            amount: amount,
+                                                            passportReq:
+                                                                passportReq,
+                                                            dobReq: dobReq,
+                                                            hesCodeReq:
+                                                                hesCodeReq,
+                                                            idCardReq:
+                                                                idCardReq,
+                                                            contactDetailsReq:
+                                                                contactDetailsReq,
+                                                            paymentMethods:
+                                                                paymentMethods,
+                                                            dobSelected: dob,
+                                                            expDate: expiryDate,
+                                                            passengers:
+                                                                passengers,
+                                                          ),
+                                                        ),
+                                                      );
+                                                    },
                                                   ),
-                                                  TextSpan(
-                                                    text: "*",
-                                                    style: TextStyle(
-                                                      color: Colors.red,
+                                                  GestureDetector(
+                                                    onTap: () {
+                                                      Navigator.pushReplacement(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              DatePicker(
+                                                            field: "dob",
+                                                            sessionId:
+                                                                sessionId,
+                                                            refNo: refNo,
+                                                            amount: amount,
+                                                            passportReq:
+                                                                passportReq,
+                                                            dobReq: dobReq,
+                                                            hesCodeReq:
+                                                                hesCodeReq,
+                                                            idCardReq:
+                                                                idCardReq,
+                                                            contactDetailsReq:
+                                                                contactDetailsReq,
+                                                            paymentMethods:
+                                                                paymentMethods,
+                                                            dobSelected: dob,
+                                                            expDate: expiryDate,
+                                                            passengers:
+                                                                passengers,
+                                                          ),
+                                                        ),
+                                                      );
+                                                    },
+                                                    child: Text.rich(
+                                                      TextSpan(
+                                                        children: [
+                                                          TextSpan(
+                                                            text:
+                                                                "Date of Birth",
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.grey,
+                                                            ),
+                                                          ),
+                                                          TextSpan(
+                                                            text: dobReq
+                                                                ? "*"
+                                                                : "",
+                                                            style: TextStyle(
+                                                              color: Colors.red,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
                                                     ),
                                                   ),
                                                 ],
                                               ),
-                                            ),
-                                          ],
-                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
+                                //Email
                                 Expanded(
                                   child: Padding(
                                     padding: const EdgeInsets.only(
@@ -665,11 +855,13 @@ class _TravelerDetailState extends State<TravelerDetail> {
                                           child: TextField(
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(),
-                                              hintText: 'Country Code',
+                                              hintText: contactDetailsReq
+                                                  ? 'Country Code*'
+                                                  : 'Country Code',
                                             ),
                                             onChanged: (val) {
                                               setState(() {
-                                                lastName = val;
+                                                dialingCode = val;
                                               });
                                             },
                                           ),
@@ -688,7 +880,7 @@ class _TravelerDetailState extends State<TravelerDetail> {
                                             ),
                                             onChanged: (val) {
                                               setState(() {
-                                                lastName = val;
+                                                phoneNo = val;
                                               });
                                             },
                                           ),
@@ -715,11 +907,13 @@ class _TravelerDetailState extends State<TravelerDetail> {
                                           child: TextField(
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(),
-                                              hintText: 'Passport Number',
+                                              hintText: passportReq
+                                                  ? 'Passport Number*'
+                                                  : 'Passport Number',
                                             ),
                                             onChanged: (val) {
                                               setState(() {
-                                                lastName = val;
+                                                passportNumber = val;
                                               });
                                             },
                                           ),
@@ -731,17 +925,63 @@ class _TravelerDetailState extends State<TravelerDetail> {
                                             left: 5,
                                             right: 10,
                                           ),
-                                          child: TextField(
-                                            decoration: InputDecoration(
-                                              border: OutlineInputBorder(),
-                                              hintText: 'Issuing country',
-                                            ),
-                                            onChanged: (val) {
-                                              setState(() {
-                                                lastName = val;
-                                              });
-                                            },
-                                          ),
+                                          child: Container(
+                                              height: 60.0,
+                                              decoration: BoxDecoration(
+                                                border: Border.all(
+                                                  color: Colors.grey,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(8.0),
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    country != null &&
+                                                            country != ""
+                                                        ? Text(
+                                                            country,
+                                                            style: TextStyle(
+                                                              fontSize: 16.0,
+                                                            ),
+                                                          )
+                                                        : Container(),
+                                                    DropdownButton(
+                                                      icon: Icon(
+                                                        Icons.expand_more,
+                                                      ),
+                                                      items: [
+                                                        'Mr',
+                                                        'Mrs',
+                                                      ].map(
+                                                        (val) {
+                                                          return DropdownMenuItem<
+                                                              String>(
+                                                            value: val,
+                                                            child: Text(
+                                                              val,
+                                                              style: TextStyle(
+                                                                fontSize: 16.0,
+                                                              ),
+                                                            ),
+                                                          );
+                                                        },
+                                                      ).toList(),
+                                                      onChanged: (val) {
+                                                        setState(
+                                                          () {
+                                                            country = val;
+                                                          },
+                                                        );
+                                                      },
+                                                    )
+                                                  ],
+                                                ),
+                                              )),
                                         ),
                                       ),
                                     ],
@@ -772,29 +1012,152 @@ class _TravelerDetailState extends State<TravelerDetail> {
                                                   BorderRadius.circular(4),
                                             ),
                                             child: Padding(
-                                              padding: const EdgeInsets.only(
-                                                left: 10,
+                                              padding: EdgeInsets.only(
+                                                left: expiryDate != "" ? 0 : 10,
                                               ),
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.start,
-                                                children: [
-                                                  IconButton(
-                                                    icon: FaIcon(
-                                                      FontAwesomeIcons
-                                                          .calendarAlt,
-                                                      color: Colors.grey,
+                                              child: expiryDate != "" &&
+                                                      expiryDate != null
+                                                  ? Center(
+                                                      child: GestureDetector(
+                                                        onTap: () {
+                                                          Navigator
+                                                              .pushReplacement(
+                                                            context,
+                                                            MaterialPageRoute(
+                                                              builder:
+                                                                  (context) =>
+                                                                      DatePicker(
+                                                                field: "expiry",
+                                                                sessionId:
+                                                                    sessionId,
+                                                                refNo: refNo,
+                                                                amount: amount,
+                                                                passportReq:
+                                                                    passportReq,
+                                                                dobReq: dobReq,
+                                                                hesCodeReq:
+                                                                    hesCodeReq,
+                                                                idCardReq:
+                                                                    idCardReq,
+                                                                contactDetailsReq:
+                                                                    contactDetailsReq,
+                                                                paymentMethods:
+                                                                    paymentMethods,
+                                                                dobSelected:
+                                                                    dob,
+                                                                expDate:
+                                                                    expiryDate,
+                                                                passengers:
+                                                                    passengers,
+                                                              ),
+                                                            ),
+                                                          );
+                                                        },
+                                                        child: Text(DateFormat(
+                                                                "dd MMM yyyy")
+                                                            .format(
+                                                                DateTime.parse(
+                                                                    expiryDate))
+                                                            .toString()),
+                                                      ),
+                                                    )
+                                                  : Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        IconButton(
+                                                          icon: FaIcon(
+                                                            FontAwesomeIcons
+                                                                .calendarAlt,
+                                                            color: Colors.grey,
+                                                          ),
+                                                          onPressed: () {
+                                                            Navigator
+                                                                .pushReplacement(
+                                                              context,
+                                                              MaterialPageRoute(
+                                                                builder:
+                                                                    (context) =>
+                                                                        DatePicker(
+                                                                  field:
+                                                                      "expiry",
+                                                                  sessionId:
+                                                                      sessionId,
+                                                                  refNo: refNo,
+                                                                  amount:
+                                                                      amount,
+                                                                  passportReq:
+                                                                      passportReq,
+                                                                  dobReq:
+                                                                      dobReq,
+                                                                  hesCodeReq:
+                                                                      hesCodeReq,
+                                                                  idCardReq:
+                                                                      idCardReq,
+                                                                  contactDetailsReq:
+                                                                      contactDetailsReq,
+                                                                  paymentMethods:
+                                                                      paymentMethods,
+                                                                  dobSelected:
+                                                                      dob,
+                                                                  expDate:
+                                                                      expiryDate,
+                                                                  passengers:
+                                                                      passengers,
+                                                                ),
+                                                              ),
+                                                            );
+                                                          },
+                                                        ),
+                                                        GestureDetector(
+                                                          onTap: () {
+                                                            Navigator
+                                                                .pushReplacement(
+                                                              context,
+                                                              MaterialPageRoute(
+                                                                builder:
+                                                                    (context) =>
+                                                                        DatePicker(
+                                                                  field:
+                                                                      "expiry",
+                                                                  sessionId:
+                                                                      sessionId,
+                                                                  refNo: refNo,
+                                                                  amount:
+                                                                      amount,
+                                                                  passportReq:
+                                                                      passportReq,
+                                                                  dobReq:
+                                                                      dobReq,
+                                                                  hesCodeReq:
+                                                                      hesCodeReq,
+                                                                  idCardReq:
+                                                                      idCardReq,
+                                                                  contactDetailsReq:
+                                                                      contactDetailsReq,
+                                                                  paymentMethods:
+                                                                      paymentMethods,
+                                                                  dobSelected:
+                                                                      dob,
+                                                                  expDate:
+                                                                      expiryDate,
+                                                                  passengers:
+                                                                      passengers,
+                                                                ),
+                                                              ),
+                                                            );
+                                                          },
+                                                          child: Text(
+                                                            "Expiry Date",
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.grey,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
-                                                    onPressed: () {},
-                                                  ),
-                                                  Text(
-                                                    "Expiry date",
-                                                    style: TextStyle(
-                                                      color: Colors.grey,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
                                             ),
                                           ),
                                         ),
@@ -864,88 +1227,69 @@ class _TravelerDetailState extends State<TravelerDetail> {
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        left: 20,
-                        right: 20,
-                        bottom: 20,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: MaterialButton(
-                              color: Color.fromRGBO(249, 190, 6, 1),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              onPressed: () {
-                                if (firstName != "" ||
-                                    lastName != "" ||
-                                    dob != "" ||
-                                    email != "") {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => PaymentMethod(
-                                        sessionId: sessionId,
-                                        refNo: refNo,
-                                        amt: amount,
-                                        title: title,
-                                        firstName: firstName,
-                                        middleName: middleName,
-                                        lastName: lastName,
-                                        dob: dob,
-                                        email: email,
-                                        dialingCode: dialingCode,
-                                        phoneNo: phoneNo,
-                                        passportNumber: passportNumber,
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(15.0),
-                                child: Text(
-                                  "DONE",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                  ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  bottom: 40,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: MaterialButton(
+                        color: Color.fromRGBO(249, 190, 6, 1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        onPressed: () {
+                          if (firstName != "" && lastName != "" ||
+                              dob != "" ||
+                              email != "") {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PaymentMethod(
+                                  sessionId: sessionId,
+                                  refNo: refNo,
+                                  amt: amount,
+                                  title: title,
+                                  firstName: firstName,
+                                  middleName: middleName,
+                                  lastName: lastName,
+                                  dob: dob,
+                                  email: email,
+                                  dialingCode: dialingCode,
+                                  phoneNo: phoneNo,
+                                  passportNumber: passportNumber,
+                                  paymentMethods: paymentMethods,
                                 ),
                               ),
+                            );
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(15.0),
+                          child: Text(
+                            "DONE",
+                            style: TextStyle(
+                              fontSize: 18,
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ],
                 ),
-          showDOBPicker
-              ? Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 200,
-                  ),
-                  child: Card(
-                    child: Container(
-                      height: 250,
-                      width: 250,
-                      color: Colors.white,
-                      child: SfDateRangePicker(
-                        onSelectionChanged: (val) {
-                          setState(() {
-                            showDOBPicker = false;
-                            dob = val.value.toString().substring(0, 10);
-                          });
-                          print(dob);
-                        },
-                        selectionMode: DateRangePickerSelectionMode.single,
-                      ),
-                    ),
-                  ),
-                )
-              : Container(),
+              ),
+            ],
+          ),
         ],
       ),
     );

@@ -31,6 +31,7 @@ class PaymentMethod extends StatefulWidget {
   final String passportNumber;
   final String dialingCode;
   final String phoneNo;
+  final List paymentMethods;
   const PaymentMethod({
     Key key,
     this.sessionId,
@@ -45,6 +46,7 @@ class PaymentMethod extends StatefulWidget {
     this.passportNumber,
     this.dialingCode,
     this.phoneNo,
+    this.paymentMethods,
   }) : super(key: key);
 
   @override
@@ -61,6 +63,7 @@ class PaymentMethod extends StatefulWidget {
         this.passportNumber,
         this.dialingCode,
         this.phoneNo,
+        this.paymentMethods,
       );
 }
 
@@ -70,7 +73,6 @@ class _PaymentMethodState extends State<PaymentMethod> {
   bool loading = false;
   String token = "";
   bool accept = false;
-  List payment_method = ["Credit Card", "Wallet", "Hold PNR"];
 
   final sessionId;
   final refNo;
@@ -84,6 +86,7 @@ class _PaymentMethodState extends State<PaymentMethod> {
   final passportNumber;
   final dialingCode;
   final phoneNo;
+  final paymentMethods;
   _PaymentMethodState(
     this.sessionId,
     this.refNo,
@@ -97,6 +100,7 @@ class _PaymentMethodState extends State<PaymentMethod> {
     this.passportNumber,
     this.dialingCode,
     this.phoneNo,
+    this.paymentMethods,
   );
 
   @override
@@ -169,7 +173,7 @@ class _PaymentMethodState extends State<PaymentMethod> {
             bookingRef: dataInJson.bookingRef,
             status: dataInJson.queueStatus,
             bookingInfo: dataInJson.bookingInfo,
-            paymentMethod: payment_method[index],
+            paymentMethod: paymentMethods[index],
           ),
         ),
         (route) => false,
@@ -621,184 +625,98 @@ class _PaymentMethodState extends State<PaymentMethod> {
                             ),
                           ),
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            CustomCheckBox(
-                              value: index == 0 ? true : false,
-                              shouldShowBorder: true,
-                              borderColor: Colors.yellow[700],
-                              checkedFillColor: Colors.white,
-                              checkedIcon: Icons.circle,
-                              checkedIconColor: Colors.yellow[700],
-                              borderRadius: 50,
-                              borderWidth: 2,
-                              checkBoxSize: 20,
-                              onChanged: (val) {
-                                //do your stuff here
-                                setState(() {
-                                  index = 0;
-                                });
-                              },
-                            ),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    index = 0;
-                                  });
-                                },
-                                child: Text(
-                                  "Credit Card or Debit Card",
-                                  style: TextStyle(
-                                    color: Color(0xFF707070),
-                                    fontFamily: 'Montserrat-Bold',
-                                    fontSize: 16,
+                        Container(
+                          height: 280,
+                          child: ListView.builder(
+                            physics: NeverScrollableScrollPhysics(),
+                            itemCount: paymentMethods.length,
+                            itemBuilder: (context, i) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      CustomCheckBox(
+                                        value: index == i ? true : false,
+                                        shouldShowBorder: true,
+                                        borderColor: Colors.yellow[700],
+                                        checkedFillColor: Colors.white,
+                                        checkedIcon: Icons.circle,
+                                        checkedIconColor: Colors.yellow[700],
+                                        borderRadius: 50,
+                                        borderWidth: 2,
+                                        checkBoxSize: 20,
+                                        onChanged: (val) {
+                                          //do your stuff here
+                                          setState(() {
+                                            index = i;
+                                          });
+                                        },
+                                      ),
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              index = i;
+                                            });
+                                          },
+                                          child: Text(
+                                            paymentMethods[i]["Mode"],
+                                            style: TextStyle(
+                                              color: Color(0xFF707070),
+                                              fontFamily: 'Montserrat-Bold',
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(
-                            left: 50.0,
+                                  paymentMethods[i]["Mode"] == "Wallet"
+                                      ? Padding(
+                                          padding: const EdgeInsets.only(
+                                            left: 50.0,
+                                          ),
+                                          child:
+                                              Text(paymentMethods[i]["Desc"]),
+                                        )
+                                      : Container(),
+                                  paymentMethods[i]["Mode"] == "Credit Card"
+                                      ? Padding(
+                                          padding: const EdgeInsets.only(
+                                            left: 50.0,
+                                          ),
+                                          child: Text.rich(
+                                            TextSpan(
+                                              children: [
+                                                TextSpan(
+                                                    text:
+                                                        'You will be redirected to a payment gateway to pay '),
+                                                TextSpan(
+                                                  text: '$amt TL',
+                                                  style: TextStyle(
+                                                    color: Colors.blue,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        )
+                                      : Container(),
+                                  SizedBox(
+                                    height: 15.0,
+                                  ),
+                                  Divider(
+                                    color: Colors.grey,
+                                    thickness: 1,
+                                  ),
+                                ],
+                              );
+                            },
                           ),
-                          child: Text.rich(
-                            TextSpan(
-                              children: [
-                                TextSpan(
-                                    text:
-                                        'You will be redirected to a payment gateway to pay '),
-                                TextSpan(
-                                  text: '$amt TL',
-                                  style: TextStyle(
-                                    color: Colors.blue,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 15.0,
-                        ),
-                        Divider(
-                          color: Colors.grey,
-                          thickness: 1,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            CustomCheckBox(
-                              value: index == 1 ? true : false,
-                              shouldShowBorder: true,
-                              borderColor: Colors.yellow[700],
-                              checkedFillColor: Colors.white,
-                              checkedIcon: Icons.circle,
-                              checkedIconColor: Colors.yellow[700],
-                              borderRadius: 50,
-                              borderWidth: 2,
-                              checkBoxSize: 20,
-                              onChanged: (val) {
-                                //do your stuff here
-                                setState(() {
-                                  index = 1;
-                                });
-                              },
-                            ),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    index = 1;
-                                  });
-                                },
-                                child: Text(
-                                  "Wallet",
-                                  style: TextStyle(
-                                    color: Color(0xFF707070),
-                                    fontFamily: 'Montserrat-Bold',
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(
-                            left: 50.0,
-                          ),
-                          child: Text.rich(
-                            TextSpan(
-                              children: [
-                                TextSpan(text: 'Your current balance is '),
-                                TextSpan(
-                                  text: '2,450.45 TL',
-                                  style: TextStyle(
-                                    color: Colors.blue,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 15.0,
-                        ),
-                        Divider(
-                          color: Colors.grey,
-                          thickness: 1,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            CustomCheckBox(
-                              value: index == 2 ? true : false,
-                              shouldShowBorder: true,
-                              borderColor: Colors.yellow[700],
-                              checkedFillColor: Colors.white,
-                              checkedIcon: Icons.circle,
-                              checkedIconColor: Colors.yellow[700],
-                              borderRadius: 50,
-                              borderWidth: 2,
-                              checkBoxSize: 20,
-                              onChanged: (val) {
-                                //do your stuff here
-                                setState(() {
-                                  index = 2;
-                                });
-                              },
-                            ),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    index = 2;
-                                  });
-                                },
-                                child: Text(
-                                  "Hold PNR (Pay later)",
-                                  style: TextStyle(
-                                    color: Color(0xFF707070),
-                                    fontFamily: 'Montserrat-Bold',
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(
-                          height: 20.0,
-                        ),
-                        Divider(
-                          color: Colors.grey,
-                          thickness: 1,
                         ),
                         SizedBox(
                           height: 25.0,

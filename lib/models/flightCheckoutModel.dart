@@ -3,12 +3,14 @@ class FlightCheckoutModel {
   Map message;
   Map flight;
   Map mandatoryInfo;
+  Map additionalInfo;
 
   FlightCheckoutModel(
     this.master,
     this.message,
     this.flight,
     this.mandatoryInfo,
+    this.additionalInfo,
   );
 
   FlightCheckoutModel.fromJson(Map<String, dynamic> json) {
@@ -16,5 +18,6 @@ class FlightCheckoutModel {
     message = json["Message"];
     flight = json["Flight"];
     mandatoryInfo = json["MandatoryInfo"];
+    additionalInfo = json["AdditionalInfo"];
   }
 }

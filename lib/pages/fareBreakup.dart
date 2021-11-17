@@ -5,12 +5,14 @@ class FareBreakup extends StatefulWidget {
   final String baseFare;
   final String tax;
   final String total;
+  final List ap;
   const FareBreakup({
     Key key,
     this.currency,
     this.baseFare,
     this.tax,
     this.total,
+    this.ap,
   }) : super(key: key);
   @override
   _FareBreakupState createState() => _FareBreakupState(
@@ -18,6 +20,7 @@ class FareBreakup extends StatefulWidget {
         this.baseFare,
         this.tax,
         this.total,
+        this.ap,
       );
 }
 
@@ -26,11 +29,13 @@ class _FareBreakupState extends State<FareBreakup> {
   final baseFare;
   final tax;
   final total;
+  final ap;
   _FareBreakupState(
     this.currency,
     this.baseFare,
     this.tax,
     this.total,
+    this.ap,
   );
   @override
   Widget build(BuildContext context) {
@@ -96,18 +101,24 @@ class _FareBreakupState extends State<FareBreakup> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "Travelers:",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      "Travelers:",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                  Text(
-                    "Adult x1",
-                    style: TextStyle(
-                      fontSize: 16,
-                    ),
+                  Row(
+                    children: List.generate(ap.length, (i) {
+                      return Text(
+                        ap[i]["PT"] + " " + "x" + ap[i]["PC"] + "  ",
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ],
               ),
