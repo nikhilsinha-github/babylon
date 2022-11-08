@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:math';
 
+import 'package:babylon/constraints.dart';
 import 'package:babylon/main.dart';
 import 'package:babylon/pages/agencyInfo.dart';
 import 'package:babylon/pages/bookingDetails.dart';
@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 
 class Bookings extends StatefulWidget {
   @override
@@ -25,12 +26,32 @@ class _BookingsState extends State<Bookings> {
   bool showDrawer = false;
   int index = 0;
   bool filter = false;
-  String sessionID = "";
-  String storedSessionID = "";
   List<BookingsModel> items = List<BookingsModel>();
   List ai = [];
   int found = 1;
   Color cardTextColor = Color(0xFF707070);
+  List statusList = ['All Booking', 'Confirmed', 'On Request', 'Cancelled'];
+  Map statusCodes = {
+    'All Booking': 'ALL',
+    'Confirmed': 'HK',
+    'On Request': 'UC',
+    'Cancelled': 'CL',
+  };
+  String statusName = "";
+  String bookingRef = "";
+  String paxRef = "";
+  String contactNo = "";
+  String email = "";
+  String pnr = "";
+  String status = "";
+  String tripDateFrom = "";
+  String tripDateTo = "";
+  String bookingDateFrom = "";
+  String bookingDateTo = "";
+  bool selectTripDate = false;
+  bool selectBookingDate = false;
+  int tripIndex = 0;
+  int bookingIndex = 0;
 
   @override
   void initState() {
@@ -56,40 +77,21 @@ class _BookingsState extends State<Bookings> {
     }
   }
 
-  generateDigits(min, max) {
-    int n;
-    n = min + Random().nextInt(max - min);
-    return n;
-  }
-
-  generateID() {
-    String genNum = "";
-    for (var i = 0; i < 4; i++) {
-      if (i < 3) {
-        genNum = genNum + generateDigits(10000, 99999).toString();
-      }
-      if (i == 3) {
-        genNum = genNum + generateDigits(1000, 9999).toString();
-      }
-    }
-    return genNum;
-  }
-
   getBookingData() async {
     var headers = {'Authorization': 'Bearer $token'};
     var request = http.MultipartRequest(
         'POST', Uri.parse('http://ibeapi.mobile.it4t.in/api/report/bookings/'));
     request.fields.addAll({
-      'bookref': ' ',
-      'paxname': '',
-      'contactno': '',
-      'email': '',
-      'pnr': '',
-      'status': 'ALL ',
-      'tripdatefrom': '',
-      'tripdateto': '',
-      'bookingdatefrom': '',
-      'bookingdateto': ''
+      'bookref': '$bookingRef',
+      'paxname': '$paxRef',
+      'contactno': '$contactNo',
+      'email': '$email',
+      'pnr': '$pnr',
+      'status': '$status',
+      'tripdatefrom': '$tripDateFrom',
+      'tripdateto': '$tripDateTo',
+      'bookingdatefrom': '$bookingDateFrom',
+      'bookingdateto': '$bookingDateTo',
     });
 
     request.headers.addAll(headers);
@@ -137,10 +139,9 @@ class _BookingsState extends State<Bookings> {
   Widget build(BuildContext context) {
     var screenHeight = MediaQuery.of(context).size.height;
     var screenWidth = MediaQuery.of(context).size.width;
-
     return Scaffold(
       backgroundColor: Colors.grey[200],
-      appBar: showDrawer
+      appBar: showDrawer || selectTripDate || selectBookingDate
           ? AppBar(
               toolbarHeight: 0,
               backgroundColor: Colors.black87,
@@ -165,9 +166,11 @@ class _BookingsState extends State<Bookings> {
                     size: 32.0,
                   ),
                   onPressed: () {
-                    setState(() {
-                      showDrawer = !showDrawer;
-                    });
+                    if (mounted) {
+                      setState(() {
+                        showDrawer = !showDrawer;
+                      });
+                    }
                   },
                 ),
               ],
@@ -193,9 +196,11 @@ class _BookingsState extends State<Bookings> {
                       ),
                       child: MaterialButton(
                         onPressed: () {
-                          setState(() {
-                            filter = !filter;
-                          });
+                          if (mounted) {
+                            setState(() {
+                              filter = true;
+                            });
+                          }
                         },
                         child: Row(
                           children: [
@@ -542,7 +547,759 @@ class _BookingsState extends State<Bookings> {
               ),
             ],
           ),
-          filter ? Container() : Container(),
+          filter
+              ? Container(
+                  color: Colors.black45,
+                )
+              : Container(),
+          filter
+              ? Align(
+                  alignment: Alignment.topCenter,
+                  child: Card(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          height: 10.0,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5.0,
+                          ),
+                          child: Row(
+                            children: [
+                              //Booking ref
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Container(
+                                    height: 50.0,
+                                    child: TextFormField(
+                                        initialValue: bookingRef,
+                                        decoration: InputDecoration(
+                                          border: OutlineInputBorder(),
+                                          hintText: "Booking Reference",
+                                          hintStyle: TextStyle(
+                                            color: Colors.grey,
+                                            fontSize: 12.0,
+                                          ),
+                                        ),
+                                        onChanged: (val) {
+                                          if (mounted) {
+                                            setState(() {
+                                              bookingRef = val;
+                                            });
+                                          }
+                                        }),
+                                  ),
+                                ),
+                              ),
+                              //Pax name
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Container(
+                                    height: 50.0,
+                                    child: TextFormField(
+                                      initialValue: paxRef,
+                                      decoration: InputDecoration(
+                                        border: OutlineInputBorder(),
+                                        hintText: "Pax Name",
+                                        hintStyle: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12.0,
+                                        ),
+                                      ),
+                                      onChanged: (val) {
+                                        if (mounted) {
+                                          setState(() {
+                                            paxRef = val;
+                                          });
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5.0,
+                          ),
+                          child: Row(
+                            children: [
+                              //Contact no.
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Container(
+                                    height: 50.0,
+                                    child: TextFormField(
+                                      initialValue: contactNo,
+                                      decoration: InputDecoration(
+                                        border: OutlineInputBorder(),
+                                        hintText: "Contact No.",
+                                        hintStyle: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12.0,
+                                        ),
+                                      ),
+                                      onChanged: (val) {
+                                        if (mounted) {
+                                          setState(() {
+                                            contactNo = val;
+                                          });
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              //Email
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Container(
+                                    height: 50.0,
+                                    child: TextFormField(
+                                      initialValue: email,
+                                      decoration: InputDecoration(
+                                        border: OutlineInputBorder(),
+                                        hintText: "Email",
+                                        hintStyle: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12.0,
+                                        ),
+                                      ),
+                                      onChanged: (val) {
+                                        if (mounted) {
+                                          setState(() {
+                                            email = val;
+                                          });
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5.0,
+                          ),
+                          child: Row(
+                            children: [
+                              //PNR
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Container(
+                                    height: 50.0,
+                                    child: TextFormField(
+                                      initialValue: pnr,
+                                      decoration: InputDecoration(
+                                        border: OutlineInputBorder(),
+                                        hintText: "PNR",
+                                        hintStyle: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12.0,
+                                        ),
+                                      ),
+                                      onChanged: (val) {
+                                        if (mounted) {
+                                          setState(() {
+                                            pnr = val;
+                                          });
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              //Status
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Container(
+                                      height: 50.0,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: Colors.grey,
+                                        ),
+                                        borderRadius: BorderRadius.circular(5),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                          left: 2.0,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                statusName ?? "",
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                            DropdownButton(
+                                              icon: Icon(
+                                                Icons.expand_more,
+                                              ),
+                                              items: statusList.map(
+                                                (val) {
+                                                  return DropdownMenuItem<
+                                                      String>(
+                                                    value: val,
+                                                    child: Text(
+                                                      val,
+                                                      style: TextStyle(
+                                                        fontSize: 10.0,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              ).toList(),
+                                              onChanged: (val) {
+                                                setState(
+                                                  () {
+                                                    statusName = val;
+                                                    status = statusCodes[val];
+                                                  },
+                                                );
+                                                print(status);
+                                                print(statusName);
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      )),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        //Trip dates
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5.0,
+                          ),
+                          child: Row(
+                            children: [
+                              //Trip date (From)
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      if (mounted) {
+                                        setState(() {
+                                          filter = false;
+                                          selectTripDate = true;
+                                          tripIndex = 0;
+                                        });
+                                      }
+                                    },
+                                    child: Container(
+                                      height: 50.0,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: Colors.grey,
+                                        ),
+                                        borderRadius: BorderRadius.circular(5),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                          top: 15.0,
+                                          left: 10.0,
+                                        ),
+                                        child: tripDateFrom == ""
+                                            ? Text(
+                                                "Trip date (From)",
+                                                style: TextStyle(
+                                                  color: Colors.grey,
+                                                  fontSize: 12.0,
+                                                ),
+                                              )
+                                            : Text(
+                                                tripDateFrom ?? "",
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              //Trip date (To)
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      if (mounted) {
+                                        setState(() {
+                                          filter = false;
+                                          selectTripDate = true;
+                                          tripIndex = 1;
+                                        });
+                                      }
+                                    },
+                                    child: Container(
+                                      height: 50.0,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: Colors.grey,
+                                        ),
+                                        borderRadius: BorderRadius.circular(5),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                          top: 15.0,
+                                          left: 10.0,
+                                        ),
+                                        child: tripDateTo == ""
+                                            ? Text(
+                                                "Trip date (To)",
+                                                style: TextStyle(
+                                                  color: Colors.grey,
+                                                  fontSize: 12.0,
+                                                ),
+                                              )
+                                            : Text(
+                                                tripDateTo ?? "",
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        //Booking dates
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5.0,
+                          ),
+                          child: Row(
+                            children: [
+                              //Booking (From)
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      if (mounted) {
+                                        setState(() {
+                                          filter = false;
+                                          selectBookingDate = true;
+                                          bookingIndex = 0;
+                                        });
+                                      }
+                                    },
+                                    child: Container(
+                                      height: 50.0,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: Colors.grey,
+                                        ),
+                                        borderRadius: BorderRadius.circular(5),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                          top: 15.0,
+                                          left: 10.0,
+                                        ),
+                                        child: bookingDateFrom == ""
+                                            ? Text(
+                                                "Booking (From)",
+                                                style: TextStyle(
+                                                  color: Colors.grey,
+                                                  fontSize: 12.0,
+                                                ),
+                                              )
+                                            : Text(
+                                                bookingDateFrom ?? "",
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              //Booking (To)
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      if (mounted) {
+                                        setState(() {
+                                          filter = false;
+                                          selectBookingDate = true;
+                                          bookingIndex = 1;
+                                        });
+                                      }
+                                    },
+                                    child: Container(
+                                      height: 50.0,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: Colors.grey,
+                                        ),
+                                        borderRadius: BorderRadius.circular(5),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                          top: 15.0,
+                                          left: 10.0,
+                                        ),
+                                        child: bookingDateTo == ""
+                                            ? Text(
+                                                "Booking (To)",
+                                                style: TextStyle(
+                                                  color: Colors.grey,
+                                                  fontSize: 12.0,
+                                                ),
+                                              )
+                                            : Text(
+                                                bookingDateTo ?? "",
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        //Buttons
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5.0,
+                          ),
+                          child: Row(
+                            children: [
+                              //Clear Filter
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: MaterialButton(
+                                    color: Colors.redAccent[400],
+                                    onPressed: () {
+                                      setState(() {
+                                        filter = false;
+                                        bookingRef = "";
+                                        paxRef = "";
+                                        contactNo = "";
+                                        email = "";
+                                        pnr = "";
+                                        status = "";
+                                        tripDateFrom = "";
+                                        tripDateTo = "";
+                                        bookingDateFrom = "";
+                                        bookingDateTo = "";
+                                      });
+                                      items = [];
+                                      getBookingData().then((value) {
+                                        if (mounted) {
+                                          setState(() {
+                                            items = value;
+                                          });
+                                        }
+                                      });
+                                      if (mounted) {
+                                        setState(() {
+                                          filter = false;
+                                        });
+                                      }
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 5.0,
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            "Clear Filter",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16.0,
+                                            ),
+                                          ),
+                                          Icon(
+                                            Icons.close,
+                                            color: Colors.white,
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              //Apply
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: MaterialButton(
+                                    color: primaryColor,
+                                    onPressed: () {
+                                      items = [];
+                                      getBookingData().then((value) {
+                                        if (mounted) {
+                                          setState(() {
+                                            items = value;
+                                          });
+                                        }
+                                      });
+                                      if (mounted) {
+                                        setState(() {
+                                          filter = false;
+                                        });
+                                      }
+                                    },
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          "APPLY",
+                                          style: TextStyle(
+                                            fontSize: 16.0,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Icon(
+                                          Icons.done,
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : Container(),
+          selectTripDate
+              ? Container(
+                  color: Colors.white,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        children: [
+                          Container(
+                            color: Colors.black87,
+                            child: Row(
+                              children: [
+                                const SizedBox(
+                                  width: 10.0,
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    "Pick a date",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      filter = true;
+                                      selectTripDate = false;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                          SfDateRangePicker(
+                            todayHighlightColor: Colors.transparent,
+                            minDate: tripDateTo != ""
+                                ? DateTime.parse(tripDateTo)
+                                : tripDateFrom != ""
+                                    ? DateTime.parse(tripDateFrom)
+                                    : DateTime.now(),
+                            onSelectionChanged: (val) {
+                              setState(() {
+                                filter = true;
+                                selectTripDate = false;
+                                if (tripIndex == 0) {
+                                  tripDateFrom =
+                                      val.value.toString().substring(0, 10);
+                                }
+                                if (tripIndex == 1) {
+                                  tripDateTo =
+                                      val.value.toString().substring(0, 10);
+                                }
+                                //dateSelected = val.value.toString().substring(0, 10);
+                              });
+                              //print(dateSelected);
+                            },
+                            selectionMode: DateRangePickerSelectionMode.single,
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 50.0,
+                          horizontal: 20.0,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: MaterialButton(
+                                color: primaryColor,
+                                onPressed: () {
+                                  setState(() {
+                                    filter = true;
+                                    selectTripDate = false;
+                                  });
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(15.0),
+                                  child: Text(
+                                    "DONE",
+                                    style: TextStyle(
+                                      fontFamily: 'Montserrat-Medium',
+                                      fontSize: 18.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                )
+              : Container(),
+          selectBookingDate
+              ? Container(
+                  color: Colors.white,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        children: [
+                          Container(
+                            color: Colors.black87,
+                            child: Row(
+                              children: [
+                                const SizedBox(
+                                  width: 10.0,
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    "Pick a date",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      filter = true;
+                                      selectBookingDate = false;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                          SfDateRangePicker(
+                            maxDate: bookingDateTo != ""
+                                ? DateTime.parse(bookingDateTo)
+                                : bookingDateFrom != ""
+                                    ? DateTime.parse(bookingDateFrom)
+                                    : DateTime.now(),
+                            todayHighlightColor: Colors.transparent,
+                            onSelectionChanged: (val) {
+                              setState(() {
+                                filter = true;
+                                selectBookingDate = false;
+                                if (bookingIndex == 0) {
+                                  bookingDateFrom =
+                                      val.value.toString().substring(0, 10);
+                                }
+                                if (bookingIndex == 1) {
+                                  bookingDateTo =
+                                      val.value.toString().substring(0, 10);
+                                }
+                              });
+                            },
+                            selectionMode: DateRangePickerSelectionMode.multiple,
+                            
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 50.0,
+                          horizontal: 20.0,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: MaterialButton(
+                                color: primaryColor,
+                                onPressed: () {
+                                  setState(() {
+                                    filter = true;
+                                    selectBookingDate = false;
+                                  });
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(15.0),
+                                  child: Text(
+                                    "DONE",
+                                    style: TextStyle(
+                                      fontFamily: 'Montserrat-Medium',
+                                      fontSize: 18.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                )
+              : Container(),
           (showDrawer)
               ? Container(
                   width: screenWidth,
@@ -578,9 +1335,11 @@ class _BookingsState extends State<Bookings> {
                                 size: 32,
                               ),
                               onPressed: () {
-                                setState(() {
-                                  showDrawer = false;
-                                });
+                                if (mounted) {
+                                  setState(() {
+                                    showDrawer = false;
+                                  });
+                                }
                               },
                             ),
                           ],
@@ -588,9 +1347,11 @@ class _BookingsState extends State<Bookings> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          setState(() {
-                            showDrawer = false;
-                          });
+                          if (mounted) {
+                            setState(() {
+                              showDrawer = false;
+                            });
+                          }
                           Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(
@@ -638,9 +1399,11 @@ class _BookingsState extends State<Bookings> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          setState(() {
-                            showDrawer = !showDrawer;
-                          });
+                          if (mounted) {
+                            setState(() {
+                              showDrawer = !showDrawer;
+                            });
+                          }
                         },
                         child: Padding(
                           padding: const EdgeInsets.only(
@@ -673,9 +1436,11 @@ class _BookingsState extends State<Bookings> {
                         ),
                         child: GestureDetector(
                           onTap: () {
-                            setState(() {
-                              showDrawer = false;
-                            });
+                            if (mounted) {
+                              setState(() {
+                                showDrawer = false;
+                              });
+                            }
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -707,9 +1472,11 @@ class _BookingsState extends State<Bookings> {
                         ),
                         child: GestureDetector(
                           onTap: () {
-                            setState(() {
-                              showDrawer = false;
-                            });
+                            if (mounted) {
+                              setState(() {
+                                showDrawer = false;
+                              });
+                            }
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -741,9 +1508,11 @@ class _BookingsState extends State<Bookings> {
                         ),
                         child: GestureDetector(
                           onTap: () {
-                            setState(() {
-                              showDrawer = false;
-                            });
+                            if (mounted) {
+                              setState(() {
+                                showDrawer = false;
+                              });
+                            }
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -775,9 +1544,11 @@ class _BookingsState extends State<Bookings> {
                         ),
                         child: GestureDetector(
                           onTap: () {
-                            setState(() {
-                              showDrawer = false;
-                            });
+                            if (mounted) {
+                              setState(() {
+                                showDrawer = false;
+                              });
+                            }
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -809,9 +1580,11 @@ class _BookingsState extends State<Bookings> {
                         ),
                         child: GestureDetector(
                           onTap: () {
-                            setState(() {
-                              showDrawer = false;
-                            });
+                            if (mounted) {
+                              setState(() {
+                                showDrawer = false;
+                              });
+                            }
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -861,8 +1634,8 @@ class _BookingsState extends State<Bookings> {
                       ),
                       Padding(
                         padding: EdgeInsets.only(
-                          left: 20,
-                          right: 20,
+                          left: 10,
+                          right: 10,
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,

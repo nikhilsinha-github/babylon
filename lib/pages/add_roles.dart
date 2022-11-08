@@ -1,10 +1,8 @@
 import 'dart:convert';
 
 import 'package:babylon/main.dart';
-import 'package:babylon/models/branchesDataModel.dart';
 import 'package:babylon/pages/agencyInfo.dart';
 import 'package:babylon/pages/bookings.dart';
-import 'package:babylon/pages/branches.dart';
 import 'package:babylon/pages/profile.dart';
 import 'package:babylon/pages/reports.dart';
 import 'package:babylon/pages/users.dart';
@@ -13,34 +11,33 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-class EditMarkup extends StatefulWidget {
-  final String markupId;
-  const EditMarkup({
-    Key key,
-    this.markupId,
-  }) : super(key: key);
+class AddRoles extends StatefulWidget {
+  const AddRoles({Key key}) : super(key: key);
 
   @override
-  _EditMarkupState createState() => _EditMarkupState(this.markupId);
+  _AddRolesState createState() => _AddRolesState();
 }
 
-class _EditMarkupState extends State<EditMarkup> {
+class _AddRolesState extends State<AddRoles> {
   String token = "";
-  bool loading = false;
   bool showDrawer = false;
-  String _markup = "";
-  String _markupType = "";
-  String agentBranchId = "";
-  String agentBranchName = "";
-  List<BranchesDataModel> branches = List<BranchesDataModel>();
-  Map markupData;
-  String choice;
-
-  final markupId;
-
-  _EditMarkupState(
-    this.markupId,
-  );
+  bool loading = false;
+  bool dataLoaded = false;
+  String _roleName = "";
+  String _roleDescription = "";
+  List assignedMenus = [];
+  bool administration = false;
+  bool agenyInfo = false;
+  bool branch = false;
+  bool role = false;
+  bool user = false;
+  bool markup = false;
+  bool bookings = false;
+  bool myBookings = false;
+  bool reports = false;
+  bool ledgers = false;
+  bool sales = false;
+  List permissions = [];
 
   @override
   void initState() {
@@ -55,65 +52,20 @@ class _EditMarkupState extends State<EditMarkup> {
         token = prefs.getString('token');
       });
     }
-    getSingleMarkup();
   }
 
-  void radioButtonChanges(String value) {
-    setState(() {
-      _markupType = value;
-      switch (value) {
-        case 'F':
-          choice = value;
-          break;
-        case 'P':
-          choice = value;
-          break;
-
-        default:
-          choice = null;
-      }
-      debugPrint(choice); //Debug the choice in console
+  addRoles() async {
+    var headers = {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json'
+    };
+    var request = http.Request(
+        'POST', Uri.parse('http://ibeapi.mobile.it4t.in/api/company/roles'));
+    request.body = json.encode({
+      "Name": "$_roleName",
+      "Description": "$_roleDescription",
+      "SaveMenu": permissions
     });
-  }
-
-  getBranchData(id) async {
-    var headers = {'Authorization': 'Bearer $token'};
-    var request = http.MultipartRequest(
-        'GET', Uri.parse('http://ibeapi.mobile.it4t.in/api/company/branches'));
-
-    request.headers.addAll(headers);
-
-    http.StreamedResponse response = await request.send();
-
-    var dataItems = List<BranchesDataModel>();
-
-    if (response.statusCode == 200) {
-      var data = await response.stream.bytesToString();
-      var body = jsonDecode(data);
-      for (var i in body) {
-        dataItems.add(BranchesDataModel.fromJson(i));
-      }
-      for (var index in dataItems) {
-        if (index.agentBranchId == id) {
-          setState(() {
-            agentBranchName = index.name;
-          });
-        }
-      }
-    } else {
-      print(response.reasonPhrase);
-    }
-
-    return dataItems;
-  }
-
-  getSingleMarkup() async {
-    var headers = {'Authorization': 'Bearer $token'};
-    var request = http.MultipartRequest(
-        'GET',
-        Uri.parse(
-            'http://ibeapi.mobile.it4t.in/api/company/markups?MarkupId=$markupId'));
-
     request.headers.addAll(headers);
 
     http.StreamedResponse response = await request.send();
@@ -121,91 +73,14 @@ class _EditMarkupState extends State<EditMarkup> {
     if (response.statusCode == 200) {
       var data = await response.stream.bytesToString();
       var body = jsonDecode(data);
-      print(body);
-      setState(() {
-        markupData = body;
-        _markup = body["Markup"].toString();
-        _markupType = body["MarkupType"].toString();
-        agentBranchId = body["AgentBranchId"].toString();
-      });
-      print(_markup);
-      getBranchData(agentBranchId).then((value) {
-        if (mounted) {
-          setState(() {
-            branches.addAll(value);
-          });
-        }
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(body["Response"]["Message"]),
+        ),
+      );
     } else {
       print(response.reasonPhrase);
     }
-  }
-
-  editMarkup() async {
-    var headers = {'Authorization': 'Bearer $token'};
-    var request = http.MultipartRequest(
-        'POST', Uri.parse('http://ibeapi.mobile.it4t.in/api/company/markups'));
-    request.fields.addAll({
-      'MarkupId': markupId,
-      'AgentBranchId': '$agentBranchId',
-      'Markup': '$_markup',
-      'MarkupType': '$_markupType',
-      'Status': '1'
-    });
-
-    request.headers.addAll(headers);
-
-    http.StreamedResponse response = await request.send();
-
-    if (response.statusCode == 200) {
-      var res = await response.stream.bytesToString();
-      var body = jsonDecode(res);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(body["Response"]["Message"])));
-      setState(() {
-        loading = false;
-      });
-      Navigator.pop(context);
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => Branches()),
-      ).then((value) => setState(() {}));
-    } else {
-      print(response.reasonPhrase);
-    }
-  }
-
-  selectBranch() {
-    return showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return ListView.builder(
-          itemCount: branches.length,
-          itemBuilder: (context, index) {
-            return GestureDetector(
-              onTap: () {
-                Navigator.pop(context);
-                setState(
-                  () {
-                    agentBranchName = branches[index].name;
-                    agentBranchId = branches[index].agentBranchId;
-                  },
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  branches[index].name,
-                  style: TextStyle(
-                    fontSize: 16.0,
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
   }
 
   @override
@@ -221,7 +96,7 @@ class _EditMarkupState extends State<EditMarkup> {
           : AppBar(
               backgroundColor: Colors.black87,
               title: Text(
-                "EDIT MARKUP",
+                "EDIT ROLES",
                 style: TextStyle(
                   color: Colors.white,
                   fontFamily: 'Montserrat-Bold',
@@ -632,143 +507,359 @@ class _EditMarkupState extends State<EditMarkup> {
               : SingleChildScrollView(
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: markupData != null
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Markup"),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8.0,
-                                ),
-                                child: Container(
-                                  height: 40.0,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(4.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Role Name"),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 8.0,
+                          ),
+                          child: Container(
+                            height: 40.0,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4.0),
+                            ),
+                            child: TextFormField(
+                              initialValue: _roleName,
+                              textAlignVertical: TextAlignVertical.top,
+                              style: TextStyle(
+                                color: Colors.black,
+                              ),
+                              textAlign: TextAlign.center,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: Colors.grey,
                                   ),
-                                  child: TextFormField(
-                                    initialValue: _markup,
-                                    textAlignVertical: TextAlignVertical.top,
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                    ),
-                                    textAlign: TextAlign.start,
-                                    decoration: InputDecoration(
-                                      border: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ),
-                                    onChanged: (val) {
-                                      setState(() {
-                                        _markup = val;
-                                      });
-                                    },
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: Colors.grey,
                                   ),
                                 ),
                               ),
-                              Text("Markup type"),
-                              Row(
-                                children: [
-                                  Row(
-                                    children: [
-                                      Radio(
-                                        value: 'F',
-                                        groupValue: _markupType,
-                                        onChanged: radioButtonChanges,
-                                      ),
-                                      Text("Fixed"),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      Radio(
-                                        value: 'P',
-                                        groupValue: _markupType,
-                                        onChanged: radioButtonChanges,
-                                      ),
-                                      Text("Percentage"),
-                                    ],
-                                  ),
-                                ],
+                              onChanged: (val) {
+                                setState(() {
+                                  //_productType = val;
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                        Text("Role Description"),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 8.0,
+                          ),
+                          child: Container(
+                            height: 40.0,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4.0),
+                            ),
+                            child: TextFormField(
+                              initialValue: _roleDescription,
+                              textAlignVertical: TextAlignVertical.top,
+                              style: TextStyle(
+                                color: Colors.black,
                               ),
-                              Text("Agent Branch"),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8.0,
+                              textAlign: TextAlign.center,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: Colors.grey,
+                                  ),
                                 ),
-                                child: GestureDetector(
-                                  onTap: selectBranch,
-                                  child: Container(
-                                    height: 40.0,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      border: Border.all(
-                                        color: Colors.grey,
-                                      ),
-                                      borderRadius: BorderRadius.circular(4.0),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          agentBranchId != "" &&
-                                                  agentBranchId != null
-                                              ? Text(
-                                                  agentBranchName,
-                                                  style: TextStyle(
-                                                    fontSize: 16.0,
-                                                  ),
-                                                )
-                                              : Text(
-                                                  "",
-                                                ),
-                                        ],
-                                      ),
-                                    ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: Colors.grey,
                                   ),
                                 ),
                               ),
-                              SizedBox(
-                                width: screenWidth,
-                                child: MaterialButton(
-                                  color: Color.fromRGBO(
-                                    249,
-                                    190,
-                                    6,
-                                    1,
-                                  ),
-                                  onPressed: () {
-                                    editMarkup();
-                                    setState(() {
-                                      loading = true;
-                                    });
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12.0),
-                                    child: Text(
-                                      "UPDATE",
-                                      style: TextStyle(
-                                        fontFamily: 'montserrat-Bold',
-                                        fontSize: 16.0,
-                                      ),
-                                    ),
-                                  ),
+                              onChanged: (val) {
+                                setState(() {
+                                  // _markup = val;
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                        Text("Permissions:"),
+                        //1
+                        CheckboxListTile(
+                          contentPadding: EdgeInsets.zero,
+                          value: administration,
+                          title: Text("Administration"),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          onChanged: (bool value) {
+                            setState(() {
+                              administration = value;
+                            });
+                            if (administration) {
+                              permissions.add("1");
+                            } else {
+                              permissions.remove("1");
+                            }
+                          },
+                        ),
+                        //2
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10.0,
+                          ),
+                          child: CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: agenyInfo,
+                            title: Text("Agency Informations"),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            onChanged: (bool value) {
+                              setState(() {
+                                agenyInfo = value;
+                              });
+                              if (agenyInfo) {
+                                permissions.add("2");
+                              } else {
+                                permissions.remove("2");
+                              }
+                            },
+                          ),
+                        ),
+                        //3
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10.0,
+                          ),
+                          child: CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: branch,
+                            title: Text("Branch Management"),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            onChanged: (bool value) {
+                              setState(() {
+                                branch = value;
+                              });
+                              if (branch) {
+                                permissions.add("3");
+                              } else {
+                                permissions.remove("3");
+                              }
+                            },
+                          ),
+                        ),
+                        //4
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10.0,
+                          ),
+                          child: CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: role,
+                            title: Text("Role Management"),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            onChanged: (bool value) {
+                              setState(() {
+                                role = value;
+                              });
+                              if (role) {
+                                permissions.add("4");
+                              } else {
+                                permissions.remove("4");
+                              }
+                            },
+                          ),
+                        ),
+                        //5
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10.0,
+                          ),
+                          child: CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: user,
+                            title: Text("User Management"),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            onChanged: (bool value) {
+                              setState(() {
+                                user = value;
+                              });
+                              if (user) {
+                                permissions.add("5");
+                              } else {
+                                permissions.remove("5");
+                              }
+                            },
+                          ),
+                        ),
+                        //6
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10.0,
+                          ),
+                          child: CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: markup,
+                            title: Text("Markup Management"),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            onChanged: (bool value) {
+                              setState(() {
+                                markup = value;
+                              });
+                              if (markup) {
+                                permissions.add("6");
+                              } else {
+                                permissions.remove("6");
+                              }
+                            },
+                          ),
+                        ),
+                        Divider(
+                          color: Colors.grey,
+                        ),
+                        //7
+                        CheckboxListTile(
+                          contentPadding: EdgeInsets.zero,
+                          value: bookings,
+                          title: Text("Bookings"),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          onChanged: (bool value) {
+                            setState(() {
+                              bookings = value;
+                            });
+                            if (bookings) {
+                              permissions.add("7");
+                            } else {
+                              permissions.remove("7");
+                            }
+                          },
+                        ),
+                        //8
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10.0,
+                          ),
+                          child: CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: myBookings,
+                            title: Text("My Bookings"),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            onChanged: (bool value) {
+                              setState(() {
+                                myBookings = value;
+                              });
+                              if (myBookings) {
+                                permissions.add("8");
+                              } else {
+                                permissions.remove("8");
+                              }
+                            },
+                          ),
+                        ),
+                        Divider(
+                          color: Colors.grey,
+                        ),
+                        //9
+                        CheckboxListTile(
+                          contentPadding: EdgeInsets.zero,
+                          value: reports,
+                          title: Text("Reports"),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          onChanged: (bool value) {
+                            setState(() {
+                              reports = value;
+                            });
+                            if (reports) {
+                              permissions.add("9");
+                            } else {
+                              permissions.remove("9");
+                            }
+                          },
+                        ),
+                        //10
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10.0,
+                          ),
+                          child: CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: ledgers,
+                            title: Text("Ledgers"),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            onChanged: (bool value) {
+                              setState(() {
+                                ledgers = value;
+                              });
+                              if (ledgers) {
+                                permissions.add("10");
+                              } else {
+                                permissions.remove("10");
+                              }
+                            },
+                          ),
+                        ),
+                        //11
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10.0,
+                          ),
+                          child: CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: sales,
+                            title: Text("Sales"),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            onChanged: (bool value) {
+                              setState(() {
+                                sales = value;
+                              });
+                              if (sales) {
+                                permissions.add("11");
+                              } else {
+                                permissions.remove("11");
+                              }
+                            },
+                          ),
+                        ),
+                        Divider(
+                          color: Colors.grey,
+                        ),
+                        SizedBox(
+                          width: screenWidth,
+                          child: MaterialButton(
+                            color: Color.fromRGBO(
+                              249,
+                              190,
+                              6,
+                              1,
+                            ),
+                            onPressed: () {
+                              if (_roleName == null || _roleName == "") {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content:
+                                            Text("Please fill role name")));
+                              } else {
+                                addRoles();
+                                setState(() {
+                                  loading = true;
+                                });
+                              }
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Text(
+                                "ADD ROLE",
+                                style: TextStyle(
+                                  fontFamily: 'montserrat-Bold',
+                                  fontSize: 16.0,
                                 ),
                               ),
-                            ],
-                          )
-                        : Container(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
           loading

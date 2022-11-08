@@ -1,6 +1,10 @@
 import 'dart:convert';
 
 import 'package:babylon/main.dart';
+import 'package:babylon/models/rolesModel.dart';
+import 'package:babylon/pages/add_roles.dart';
+import 'package:babylon/pages/add_user.dart';
+import 'package:babylon/pages/edit_roles.dart';
 import 'package:babylon/pages/edit_user.dart';
 import 'package:babylon/pages/agencyInfo.dart';
 import 'package:babylon/pages/bookings.dart';
@@ -11,6 +15,7 @@ import 'package:babylon/pages/reports.dart';
 import 'package:babylon/svgIcons.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,6 +30,7 @@ class _UsersState extends State<Users> {
   int index = 0;
   int found = 1;
   List<UserModel> items = List<UserModel>();
+  List<RolesModel> rolesItems = List<RolesModel>();
   String agentRoleId = "";
   String agentBranchId = "";
   String phone = "";
@@ -58,6 +64,15 @@ class _UsersState extends State<Users> {
         if (mounted) {
           setState(() {
             items = value;
+          });
+        }
+      });
+    }
+    if (rolesItems.isEmpty) {
+      getRoles().then((value) {
+        if (mounted) {
+          setState(() {
+            rolesItems = value;
           });
         }
       });
@@ -101,6 +116,33 @@ class _UsersState extends State<Users> {
             found = 0;
           });
         }
+      }
+    } else {
+      print(response.reasonPhrase);
+    }
+    print(dataItems);
+
+    return dataItems;
+  }
+
+  getRoles() async {
+    var headers = {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json'
+    };
+    var request = http.Request(
+        'GET', Uri.parse('http://ibeapi.mobile.it4t.in/api/company/roles'));
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    var dataItems = List<RolesModel>();
+
+    if (response.statusCode == 200) {
+      var data = await response.stream.bytesToString();
+      var body = jsonDecode(data);
+      for (var i in body) {
+        dataItems.add(RolesModel.fromJson(i));
       }
     } else {
       print(response.reasonPhrase);
@@ -426,159 +468,60 @@ class _UsersState extends State<Users> {
                                               ),
                                               child: CircleAvatar(
                                                 radius: 5.0,
-                                                backgroundColor: Colors.green,
-                                              ),
-                                            ),
-                                            Text(
-                                              items[index].status,
-                                              style: TextStyle(
-                                                fontFamily: 'Montserrat-Medium',
-                                                fontSize: 16,
+                                                backgroundColor:
+                                                    items[index].status == "1"
+                                                        ? Colors.green
+                                                        : Colors.red,
                                               ),
                                             ),
                                           ],
                                         ),
                                       ),
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          border: Border(
-                                            top: BorderSide(
-                                              color: Colors.grey,
+                                      GestureDetector(
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => EditUser(
+                                                agentUserId:
+                                                    items[index].agentUserId,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            border: Border(
+                                              top: BorderSide(
+                                                color: Colors.grey,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceAround,
-                                          children: [
-                                            Expanded(
-                                              child: Container(
-                                                decoration: BoxDecoration(
-                                                  border: Border(
-                                                    right: BorderSide(
-                                                      color: Colors.grey,
-                                                    ),
-                                                  ),
-                                                ),
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  children: [
-                                                    Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              8.0),
-                                                      child: Text("View"),
-                                                    ),
-                                                    Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              8.0),
-                                                      child: Icon(
-                                                        Icons.remove_red_eye,
-                                                        color: Colors.grey,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                            Expanded(
-                                              child: Container(
-                                                child: GestureDetector(
-                                                  onTap: () {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            EditUser(
-                                                          agentUserId:
-                                                              items[index]
-                                                                  .agentUserId,
-                                                          title: items[index]
-                                                              .fullName
-                                                              .substring(
-                                                                  0,
-                                                                  items[index]
-                                                                      .fullName
-                                                                      .indexOf(
-                                                                          ' ',
-                                                                          2)),
-                                                          firstName: items[
-                                                                  index]
-                                                              .fullName
-                                                              .substring(
-                                                                  items[index]
-                                                                      .fullName
-                                                                      .indexOf(
-                                                                          ' ',
-                                                                          2),
-                                                                  items[index]
-                                                                      .fullName
-                                                                      .indexOf(
-                                                                          ' ',
-                                                                          3)),
-                                                          middleName: items[
-                                                                  index]
-                                                              .fullName
-                                                              .substring(
-                                                                  items[index]
-                                                                      .fullName
-                                                                      .indexOf(
-                                                                          ' ',
-                                                                          3),
-                                                                  items[index]
-                                                                      .fullName
-                                                                      .indexOf(
-                                                                          ' ',
-                                                                          4)),
-                                                          lastName: items[index]
-                                                              .fullName
-                                                              .substring(
-                                                                items[index]
-                                                                    .fullName
-                                                                    .indexOf(
-                                                                        ' ', 4),
-                                                              ),
-                                                          email: items[index]
-                                                              .email,
-                                                          loginId: items[index]
-                                                              .loginId,
-                                                          mobile: items[index]
-                                                              .mobile,
-                                                          dob: items[index].dob,
-                                                          agentRoleId: '',
-                                                          agentBranchId: '',
-                                                        ),
-                                                      ),
-                                                    );
-                                                  },
-                                                  child: Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(8.0),
-                                                        child: Text("Edit"),
-                                                      ),
-                                                      Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(8.0),
-                                                        child: Icon(
-                                                          Icons.edit,
-                                                          color: Colors.grey,
-                                                        ),
-                                                      ),
-                                                    ],
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.all(10.0),
+                                                child: Text(
+                                                  "Edit",
+                                                  style: TextStyle(
+                                                    fontSize: 16.0,
                                                   ),
                                                 ),
                                               ),
-                                            ),
-                                          ],
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.all(8.0),
+                                                child: Icon(
+                                                  FontAwesomeIcons.pencilAlt,
+                                                  color: Colors.grey,
+                                                  size: 20.0,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -596,46 +539,7 @@ class _UsersState extends State<Users> {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (context) => EditUser(
-                                                agentUserId:
-                                                    items[index].agentUserId,
-                                                title: items[index]
-                                                    .fullName
-                                                    .substring(
-                                                        0,
-                                                        items[index]
-                                                            .fullName
-                                                            .indexOf(' ', 2)),
-                                                firstName: items[index]
-                                                    .fullName
-                                                    .substring(
-                                                        items[index]
-                                                            .fullName
-                                                            .indexOf(' ', 2),
-                                                        items[index]
-                                                            .fullName
-                                                            .indexOf(' ', 3)),
-                                                middleName: items[index]
-                                                    .fullName
-                                                    .substring(
-                                                        items[index]
-                                                            .fullName
-                                                            .indexOf(' ', 3),
-                                                        items[index]
-                                                            .fullName
-                                                            .indexOf(' ', 4)),
-                                                lastName: items[index]
-                                                    .fullName
-                                                    .substring(
-                                                      items[index]
-                                                          .fullName
-                                                          .indexOf(' ', 4),
-                                                    ),
-                                                email: items[index].email,
-                                                loginId: items[index].loginId,
-                                                mobile: items[index].mobile,
-                                                dob: items[index].dob,
-                                              ),
+                                              builder: (context) => AddUser(),
                                             ),
                                           );
                                         },
@@ -664,66 +568,7 @@ class _UsersState extends State<Users> {
                                                         context,
                                                         MaterialPageRoute(
                                                           builder: (context) =>
-                                                              EditUser(
-                                                            agentUserId: items[
-                                                                    index]
-                                                                .agentUserId,
-                                                            title: items[index]
-                                                                .fullName
-                                                                .substring(
-                                                                    0,
-                                                                    items[index]
-                                                                        .fullName
-                                                                        .indexOf(
-                                                                            ' ',
-                                                                            2)),
-                                                            firstName: items[
-                                                                    index]
-                                                                .fullName
-                                                                .substring(
-                                                                    items[index]
-                                                                        .fullName
-                                                                        .indexOf(
-                                                                            ' ',
-                                                                            2),
-                                                                    items[index]
-                                                                        .fullName
-                                                                        .indexOf(
-                                                                            ' ',
-                                                                            3)),
-                                                            middleName: items[index]
-                                                                .fullName
-                                                                .substring(
-                                                                    items[index]
-                                                                        .fullName
-                                                                        .indexOf(
-                                                                            ' ',
-                                                                            3),
-                                                                    items[index]
-                                                                        .fullName
-                                                                        .indexOf(
-                                                                            ' ',
-                                                                            4)),
-                                                            lastName:
-                                                                items[index]
-                                                                    .fullName
-                                                                    .substring(
-                                                                      items[index]
-                                                                          .fullName
-                                                                          .indexOf(
-                                                                              ' ',
-                                                                              4),
-                                                                    ),
-                                                            email: items[index]
-                                                                .email,
-                                                            loginId:
-                                                                items[index]
-                                                                    .loginId,
-                                                            mobile: items[index]
-                                                                .mobile,
-                                                            dob: items[index]
-                                                                .dob,
-                                                          ),
+                                                              AddUser(),
                                                         ),
                                                       );
                                                     },
@@ -756,199 +601,172 @@ class _UsersState extends State<Users> {
                   : Container(),
               index == 1
                   ? Container(
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Card(
-                              child: ExpansionTile(
-                                title: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text(
-                                    "Admin",
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ),
-                                expandedCrossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  Divider(
-                                    color: Colors.grey[900],
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                      top: 20,
-                                      bottom: 20,
-                                      left: 20,
-                                    ),
-                                    child: Text(
-                                      "Role Description",
-                                      style: TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 17,
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      border: Border(
-                                        top: BorderSide(
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceAround,
+                      height: screenHeight - 200,
+                      child: ListView.builder(
+                        itemCount: rolesItems.length,
+                        itemBuilder: (context, index) {
+                          return Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Card(
+                                  child: ExpansionTile(
+                                    title: Row(
                                       children: [
-                                        Expanded(
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              border: Border(
-                                                right: BorderSide(
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                            ),
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
-                                                  child: Text("View"),
-                                                ),
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
-                                                  child: Icon(
-                                                    Icons.remove_red_eye,
-                                                    color: Colors.grey,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: CircleAvatar(
+                                            radius: 5,
+                                            backgroundColor: Colors.green,
                                           ),
                                         ),
-                                        Expanded(
-                                          child: Container(
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
-                                                  child: Text("Edit"),
-                                                ),
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
-                                                  child: Icon(
-                                                    Icons.edit,
-                                                    color: Colors.grey,
-                                                  ),
-                                                ),
-                                              ],
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Text(
+                                            rolesItems[index].name,
+                                            style: TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: 16.0,
                                             ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Card(
-                              child: ExpansionTile(
-                                title: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text(
-                                    "Branch Manager",
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Card(
-                              child: ExpansionTile(
-                                title: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text(
-                                    "Supervisor",
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Card(
-                              child: ExpansionTile(
-                                title: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text(
-                                    "Agent",
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              top: 10,
-                              left: 15,
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  child: CircleAvatar(
-                                    radius: 15,
-                                    backgroundColor:
-                                        Color.fromRGBO(249, 190, 6, 1),
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.add,
-                                        color: Colors.white,
-                                        size: 25,
+                                    expandedCrossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    expandedAlignment: Alignment.centerLeft,
+                                    children: [
+                                      Divider(
+                                        color: Colors.grey[400],
+                                        thickness: 1,
                                       ),
-                                    ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          top: 10,
+                                          bottom: 10,
+                                          left: 20,
+                                        ),
+                                        child: Text(
+                                          rolesItems[index].description ?? "",
+                                          style: TextStyle(
+                                            fontFamily: 'Montserrat-Medium',
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => EditRoles(
+                                                roleId: rolesItems[index]
+                                                    .agentRoleId,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            border: Border(
+                                              top: BorderSide(
+                                                color: Colors.grey[400],
+                                              ),
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.all(8.0),
+                                                child: Text("Edit"),
+                                              ),
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.all(8.0),
+                                                child: Icon(
+                                                  Icons.edit,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                    left: 15,
-                                  ),
-                                  child: Text(
-                                    "ADD NEW ROLE",
-                                    style: TextStyle(
-                                      fontFamily: 'Montserrat-Bold',
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                              ),
+                              index == rolesItems.length - 1
+                                  ? Padding(
+                                      padding: const EdgeInsets.only(
+                                        top: 10,
+                                        left: 8,
+                                      ),
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => AddRoles(),
+                                            ),
+                                          );
+                                        },
+                                        child: Row(
+                                          children: [
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: CircleAvatar(
+                                                radius: 18,
+                                                backgroundColor: Color.fromRGBO(
+                                                  249,
+                                                  190,
+                                                  6,
+                                                  1,
+                                                ),
+                                                child: Center(
+                                                  child: IconButton(
+                                                    icon: Icon(
+                                                      Icons.add,
+                                                      color: Colors.white,
+                                                      size: 20,
+                                                    ),
+                                                    onPressed: () {
+                                                      Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              AddRoles(),
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Text(
+                                                "ADD NEW USER",
+                                                style: TextStyle(
+                                                  fontFamily: 'Montserrat-Bold',
+                                                  fontSize: 16.0,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : Container(),
+                            ],
+                          );
+                        },
                       ),
                     )
                   : Container(),
@@ -1272,8 +1090,8 @@ class _UsersState extends State<Users> {
                       ),
                       Padding(
                         padding: EdgeInsets.only(
-                          left: 20,
-                          right: 20,
+                          left: 10,
+                          right: 10,
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:babylon/pages/agencyInfo.dart';
+import 'package:babylon/pages/booking_document.dart';
 import 'package:babylon/pages/branches.dart';
 import 'package:babylon/constraints.dart';
 import 'package:babylon/generalFunctions.dart';
@@ -31,6 +32,7 @@ class _BookingDetailsState extends State<BookingDetails> {
 
   String token = "";
   bool showDrawer = false;
+  bool loading = false;
   int found = 1;
   List<BookingDetailModel> items = List<BookingDetailModel>();
   var genFunc = GenFunc();
@@ -40,6 +42,7 @@ class _BookingDetailsState extends State<BookingDetails> {
   void initState() {
     super.initState();
     getToken();
+    debugPrint(bookingId);
   }
 
   getToken() async {
@@ -80,6 +83,7 @@ class _BookingDetailsState extends State<BookingDetails> {
         var listItems = jsonDecode(body);
         dataItems.add(BookingDetailModel.fromJson(listItems));
         print(dataItems);
+
         if (mounted) {
           setState(() {
             found = 1;
@@ -97,6 +101,60 @@ class _BookingDetailsState extends State<BookingDetails> {
     }
 
     return dataItems;
+  }
+
+  cancelBooking() async {
+    var headers = {'Authorization': 'Bearer $token'};
+    var request = http.MultipartRequest('POST',
+        Uri.parse('http://ibeapi.mobile.it4t.in/api/booking/cancelpnr'));
+    request.fields.addAll({'BookingRef': '$bookingId'});
+
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      var data = await response.stream.bytesToString();
+      var body = jsonDecode(data);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(body["Response"]["Message"]),
+        ),
+      );
+      setState(() {
+        loading = false;
+      });
+    } else {
+      print(response.reasonPhrase);
+    }
+  }
+
+  issueTicket() async {
+    var headers = {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json'
+    };
+    var request = http.Request('POST',
+        Uri.parse('http://ibeapi.mobile.it4t.in/api/booking/issueticket'));
+    request.body = json.encode({
+      "TotalOfferPrice": "250",
+      "Passengers": [4562],
+      "BookingRef": "302119",
+      "PaymentMethod": "wallet",
+      "QueueStatus": ""
+    });
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      setState(() {
+        loading = false;
+      });
+      print(await response.stream.bytesToString());
+    } else {
+      print(response.reasonPhrase);
+    }
   }
 
   @override
@@ -277,11 +335,11 @@ class _BookingDetailsState extends State<BookingDetails> {
                                               color: Colors.grey,
                                             ),
                                           ),
-                                          Text(items[0].data['FlightDetails']
-                                                  ['OriginCode'] +
-                                              " - " +
-                                              items[0].data['FlightDetails']
-                                                  ['DestinationCode']),
+                                          Text(items[0].bookingInformation ==
+                                                  null
+                                              ? ""
+                                              : items[0].bookingInformation[
+                                                  'Sector']),
                                         ],
                                       ),
                                     ),
@@ -300,11 +358,11 @@ class _BookingDetailsState extends State<BookingDetails> {
                                               color: Colors.grey,
                                             ),
                                           ),
-                                          Text(items[0].data['Passengers'][0]
-                                                  ['Title'] +
-                                              ' ' +
-                                              items[0].data['Passengers'][0]
-                                                  ['FullName']),
+                                          Text(items[0].bookingInformation ==
+                                                  null
+                                              ? ""
+                                              : items[0]
+                                                  .bookingInformation['Name']),
                                         ],
                                       ),
                                     ),
@@ -323,8 +381,11 @@ class _BookingDetailsState extends State<BookingDetails> {
                                               color: Colors.grey,
                                             ),
                                           ),
-                                          Text(items[0].data['SupplierInfo']
-                                              ['AgentName']),
+                                          Text(items[0].bookingInformation ==
+                                                  null
+                                              ? ""
+                                              : items[0].bookingInformation[
+                                                  'Createdby']),
                                         ],
                                       ),
                                     ),
@@ -343,10 +404,11 @@ class _BookingDetailsState extends State<BookingDetails> {
                                               color: Colors.grey,
                                             ),
                                           ),
-                                          Text(DateFormat("dd MMM yyyy").format(
-                                              DateTime.parse(
-                                                  items[0].data['SupplierInfo']
-                                                      ['DateOfBooking']))),
+                                          Text(items[0].bookingInformation ==
+                                                  null
+                                              ? ""
+                                              : items[0].bookingInformation[
+                                                  'BookingDate']),
                                         ],
                                       ),
                                     ),
@@ -365,8 +427,11 @@ class _BookingDetailsState extends State<BookingDetails> {
                                               color: Colors.grey,
                                             ),
                                           ),
-                                          Text(items[0].data['SupplierInfo']
-                                              ['AgentName']),
+                                          Text(items[0].bookingInformation ==
+                                                  null
+                                              ? ""
+                                              : items[0].bookingInformation[
+                                                  'LockedBy']),
                                         ],
                                       ),
                                     ),
@@ -387,26 +452,36 @@ class _BookingDetailsState extends State<BookingDetails> {
                                           ),
                                           Row(
                                             children: [
-                                              Text(items[0].data['SupplierInfo']
-                                                  ['Status']),
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                    left: 10.0, right: 10.0),
-                                                child: CircleAvatar(
-                                                  radius: 5,
-                                                  backgroundColor: items[0]
-                                                                      .data[
-                                                                  'SupplierInfo']
-                                                              ['Status'] ==
-                                                          "Confirmed"
-                                                      ? Colors.green
-                                                      : items[0].data['SupplierInfo']
-                                                                  ['Status'] ==
-                                                              "UnConfirmed"
-                                                          ? Colors.yellow[800]
-                                                          : Colors.red,
-                                                ),
-                                              ),
+                                              items[0].bookingInformation ==
+                                                      null
+                                                  ? Container()
+                                                  : Text(items[0]
+                                                          .bookingInformation[
+                                                      'Status']),
+                                              items[0].bookingInformation ==
+                                                      null
+                                                  ? Container()
+                                                  : Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              left: 10.0,
+                                                              right: 10.0),
+                                                      child: CircleAvatar(
+                                                        radius: 5,
+                                                        backgroundColor: items[
+                                                                            0]
+                                                                        .bookingInformation[
+                                                                    'Status'] ==
+                                                                "Confirmed"
+                                                            ? Colors.green
+                                                            : items[0].bookingInformation[
+                                                                        'Status'] ==
+                                                                    "UnConfirmed"
+                                                                ? Colors
+                                                                    .yellow[800]
+                                                                : Colors.red,
+                                                      ),
+                                                    ),
                                             ],
                                           ),
                                         ],
@@ -433,232 +508,202 @@ class _BookingDetailsState extends State<BookingDetails> {
                                     ),
                                   ),
                                   children: [
-                                    Container(
-                                      constraints: BoxConstraints(
-                                        minHeight: 100,
-                                        maxHeight: 500,
-                                      ),
-                                      child: ListView.builder(
-                                        shrinkWrap: true,
-                                        itemCount: items[0].flightSeg.length,
-                                        itemBuilder: (context, index) {
-                                          var flight = items[0].flightSeg[
-                                              (index + 1).toString()];
-                                          return Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Card(
-                                              elevation:
-                                                  items[0].flightSeg.length == 1
-                                                      ? 0
-                                                      : 5,
-                                              child: Column(
-                                                children: [
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            8.0),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
+                                    items[0].flightSeg == null
+                                        ? Container()
+                                        : Container(
+                                            constraints: BoxConstraints(
+                                              minHeight: 100,
+                                              maxHeight: 500,
+                                            ),
+                                            child: ListView.builder(
+                                              shrinkWrap: true,
+                                              itemCount:
+                                                  items[0].flightSeg.length,
+                                              itemBuilder: (context, index) {
+                                                var flight = items[0].flightSeg[
+                                                    (index + 1).toString()];
+                                                return Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(8.0),
+                                                  child: Card(
+                                                    elevation: items[0]
+                                                                .flightSeg
+                                                                .length ==
+                                                            1
+                                                        ? 0
+                                                        : 5,
+                                                    child: Column(
                                                       children: [
-                                                        Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            Text(
-                                                              flight[0][
-                                                                      "DepartureAirport"] +
-                                                                  " - " +
-                                                                  flight[flight
-                                                                          .length -
-                                                                      1]["ArrivalAirport"],
-                                                              style: TextStyle(
-                                                                fontFamily:
-                                                                    'Montserrat-Bold',
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .all(8.0),
+                                                          child: Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
+                                                            children: [
+                                                              Column(
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment
+                                                                        .start,
+                                                                children: [
+                                                                  Text(
+                                                                    flight[0][
+                                                                            "DepartureAirport"] +
+                                                                        " - " +
+                                                                        flight[flight.length -
+                                                                                1]
+                                                                            [
+                                                                            "ArrivalAirport"],
+                                                                    style:
+                                                                        TextStyle(
+                                                                      fontFamily:
+                                                                          'Montserrat-Bold',
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold,
+                                                                    ),
+                                                                  ),
+                                                                  Text(DateFormat(
+                                                                          "EEE, dd MMM")
+                                                                      .format(DateTime.parse(
+                                                                          flight[0]
+                                                                              [
+                                                                              "DepartureDate"]))
+                                                                      .toString()),
+                                                                ],
                                                               ),
-                                                            ),
-                                                            Text(DateFormat(
-                                                                    "EEE, dd MMM")
-                                                                .format(DateTime
-                                                                    .parse(flight[
-                                                                            0][
-                                                                        "DepartureDate"]))
-                                                                .toString()),
-                                                          ],
+                                                              Column(
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment
+                                                                        .end,
+                                                                children: [
+                                                                  genFunc.getDuration(
+                                                                      flight[0][
+                                                                          "TotalDuration"]),
+                                                                  Text((flight.length -
+                                                                              1)
+                                                                          .toString() +
+                                                                      " stop"),
+                                                                ],
+                                                              ),
+                                                            ],
+                                                          ),
                                                         ),
-                                                        Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .end,
-                                                          children: [
-                                                            genFunc.getDuration(
-                                                                flight[0][
-                                                                    "TotalDuration"]),
-                                                            Text((flight.length -
-                                                                        1)
-                                                                    .toString() +
-                                                                " stop"),
-                                                          ],
+                                                        Divider(
+                                                          color: Colors.grey,
+                                                        ),
+                                                        SingleChildScrollView(
+                                                          child: Column(
+                                                            children:
+                                                                List.generate(
+                                                              flight.length,
+                                                              (index) {
+                                                                return Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                              .all(
+                                                                          8.0),
+                                                                  child: Row(
+                                                                    mainAxisAlignment:
+                                                                        MainAxisAlignment
+                                                                            .spaceBetween,
+                                                                    children: [
+                                                                      Column(
+                                                                        crossAxisAlignment:
+                                                                            CrossAxisAlignment.start,
+                                                                        children: [
+                                                                          Text(
+                                                                            flight[index]["DepartureAirport"],
+                                                                            style:
+                                                                                TextStyle(
+                                                                              color: Colors.grey,
+                                                                              fontSize: 12.0,
+                                                                            ),
+                                                                          ),
+                                                                          Text(
+                                                                            flight[index]["DepartureTime"],
+                                                                            style:
+                                                                                TextStyle(
+                                                                              color: cardTextColor,
+                                                                              fontFamily: 'Montserrat-Bold',
+                                                                              fontSize: 18.0,
+                                                                            ),
+                                                                          ),
+                                                                          Text(
+                                                                            DateFormat("EEE, dd MMM").format(DateTime.parse(flight[index]["DepartureDate"])),
+                                                                            style:
+                                                                                TextStyle(
+                                                                              color: Colors.grey,
+                                                                              fontSize: 12.0,
+                                                                            ),
+                                                                          ),
+                                                                          Text(
+                                                                            "Terminal: " +
+                                                                                flight[index]["DepartureTerminal"],
+                                                                            style:
+                                                                                TextStyle(
+                                                                              color: Colors.grey,
+                                                                              fontSize: 12.0,
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                      Column(
+                                                                        crossAxisAlignment:
+                                                                            CrossAxisAlignment.end,
+                                                                        children: [
+                                                                          Text(
+                                                                            flight[index]["ArrivalAirport"],
+                                                                            style:
+                                                                                TextStyle(
+                                                                              color: Colors.grey,
+                                                                              fontSize: 12.0,
+                                                                            ),
+                                                                          ),
+                                                                          Text(
+                                                                            flight[index]["ArrivalTime"],
+                                                                            style:
+                                                                                TextStyle(
+                                                                              color: cardTextColor,
+                                                                              fontFamily: 'Montserrat-Bold',
+                                                                              fontSize: 18.0,
+                                                                            ),
+                                                                          ),
+                                                                          Text(
+                                                                            DateFormat("EEE, dd MMM").format(DateTime.parse(flight[index]["ArrivalDate"])),
+                                                                            style:
+                                                                                TextStyle(
+                                                                              color: Colors.grey,
+                                                                              fontSize: 12.0,
+                                                                            ),
+                                                                          ),
+                                                                          Text(
+                                                                            "Terminal: " +
+                                                                                flight[index]["ArrivalTerminal"],
+                                                                            style:
+                                                                                TextStyle(
+                                                                              color: Colors.grey,
+                                                                              fontSize: 12.0,
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                );
+                                                              },
+                                                            ),
+                                                          ),
                                                         ),
                                                       ],
                                                     ),
                                                   ),
-                                                  Divider(
-                                                    color: Colors.grey,
-                                                  ),
-                                                  SingleChildScrollView(
-                                                    child: Column(
-                                                      children: List.generate(
-                                                        flight.length,
-                                                        (index) {
-                                                          return Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .all(8.0),
-                                                            child: Row(
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .spaceBetween,
-                                                              children: [
-                                                                Column(
-                                                                  crossAxisAlignment:
-                                                                      CrossAxisAlignment
-                                                                          .start,
-                                                                  children: [
-                                                                    Text(
-                                                                      flight[index]
-                                                                          [
-                                                                          "DepartureAirport"],
-                                                                      style:
-                                                                          TextStyle(
-                                                                        color: Colors
-                                                                            .grey,
-                                                                        fontSize:
-                                                                            12.0,
-                                                                      ),
-                                                                    ),
-                                                                    Text(
-                                                                      flight[index]
-                                                                          [
-                                                                          "DepartureTime"],
-                                                                      style:
-                                                                          TextStyle(
-                                                                        color:
-                                                                            cardTextColor,
-                                                                        fontFamily:
-                                                                            'Montserrat-Bold',
-                                                                        fontSize:
-                                                                            18.0,
-                                                                      ),
-                                                                    ),
-                                                                    Text(
-                                                                      DateFormat(
-                                                                              "EEE, dd MMM")
-                                                                          .format(DateTime.parse(flight[index]
-                                                                              [
-                                                                              "DepartureDate"])),
-                                                                      style:
-                                                                          TextStyle(
-                                                                        color: Colors
-                                                                            .grey,
-                                                                        fontSize:
-                                                                            12.0,
-                                                                      ),
-                                                                    ),
-                                                                    Text(
-                                                                      "Terminal: " +
-                                                                          flight[index]
-                                                                              [
-                                                                              "DepartureTerminal"],
-                                                                      style:
-                                                                          TextStyle(
-                                                                        color: Colors
-                                                                            .grey,
-                                                                        fontSize:
-                                                                            12.0,
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                                Column(
-                                                                  crossAxisAlignment:
-                                                                      CrossAxisAlignment
-                                                                          .end,
-                                                                  children: [
-                                                                    Text(
-                                                                      flight[index]
-                                                                          [
-                                                                          "ArrivalAirport"],
-                                                                      style:
-                                                                          TextStyle(
-                                                                        color: Colors
-                                                                            .grey,
-                                                                        fontSize:
-                                                                            12.0,
-                                                                      ),
-                                                                    ),
-                                                                    Text(
-                                                                      flight[index]
-                                                                          [
-                                                                          "ArrivalTime"],
-                                                                      style:
-                                                                          TextStyle(
-                                                                        color:
-                                                                            cardTextColor,
-                                                                        fontFamily:
-                                                                            'Montserrat-Bold',
-                                                                        fontSize:
-                                                                            18.0,
-                                                                      ),
-                                                                    ),
-                                                                    Text(
-                                                                      DateFormat(
-                                                                              "EEE, dd MMM")
-                                                                          .format(DateTime.parse(flight[index]
-                                                                              [
-                                                                              "ArrivalDate"])),
-                                                                      style:
-                                                                          TextStyle(
-                                                                        color: Colors
-                                                                            .grey,
-                                                                        fontSize:
-                                                                            12.0,
-                                                                      ),
-                                                                    ),
-                                                                    Text(
-                                                                      "Terminal: " +
-                                                                          flight[index]
-                                                                              [
-                                                                              "ArrivalTerminal"],
-                                                                      style:
-                                                                          TextStyle(
-                                                                        color: Colors
-                                                                            .grey,
-                                                                        fontSize:
-                                                                            12.0,
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          );
-                                                        },
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
+                                                );
+                                              },
                                             ),
-                                          );
-                                        },
-                                      ),
-                                    ),
+                                          ),
                                   ],
                                 ),
                               ),
@@ -679,216 +724,221 @@ class _BookingDetailsState extends State<BookingDetails> {
                                     ),
                                   ),
                                   children: [
-                                    Container(
-                                      constraints: BoxConstraints(
-                                        minHeight: 100,
-                                        maxHeight: 500,
-                                      ),
-                                      child: ListView.builder(
-                                        shrinkWrap: true,
-                                        itemCount:
-                                            items[0].data["Passengers"].length,
-                                        itemBuilder: (context, index) {
-                                          return Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Card(
-                                              child: Column(
-                                                children: [
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            8.0),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        Text(
-                                                          "Name :",
-                                                          style: TextStyle(
-                                                            color:
-                                                                cardTextColor,
-                                                          ),
-                                                        ),
-                                                        Text(items[0].data[
-                                                                        "Passengers"]
-                                                                    [index]
-                                                                ['Title'] +
-                                                            ' ' +
-                                                            items[0].data[
-                                                                        "Passengers"]
-                                                                    [index]
-                                                                ['FullName']),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  Divider(
-                                                    color: Colors.grey,
-                                                  ),
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            8.0),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        Text(
-                                                          "Phone Number :",
-                                                          style: TextStyle(
-                                                            color:
-                                                                cardTextColor,
-                                                          ),
-                                                        ),
-                                                        Text(items[0].data[
-                                                                "Passengers"][
-                                                            index]['MobileNo']),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  Divider(
-                                                    color: Colors.grey,
-                                                  ),
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            8.0),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        Text(
-                                                          "Nationality :",
-                                                          style: TextStyle(
-                                                            color:
-                                                                cardTextColor,
-                                                          ),
-                                                        ),
-                                                        Text(items[0].data[
-                                                                    "Passengers"]
-                                                                [index]
-                                                            ['Nationality']),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  Divider(
-                                                    color: Colors.grey,
-                                                  ),
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            8.0),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        Text(
-                                                          "Passport Number :",
-                                                          style: TextStyle(
-                                                            color:
-                                                                cardTextColor,
-                                                          ),
-                                                        ),
-                                                        Text(items[0].data[
-                                                                    "Passengers"]
-                                                                [index]
-                                                            ['PassportNumber']),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  Divider(
-                                                    color: Colors.grey,
-                                                  ),
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            8.0),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        Text(
-                                                          "Ticket Number :",
-                                                          style: TextStyle(
-                                                            color:
-                                                                cardTextColor,
-                                                          ),
-                                                        ),
-                                                        Text(items[0].data["Passengers"]
-                                                                        [index][
-                                                                    "TicketNumber"] !=
-                                                                null
-                                                            ? items[0].data[
-                                                                        "Passengers"]
-                                                                    [index]
-                                                                ["TicketNumber"]
-                                                            : "null"),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  Divider(
-                                                    color: Colors.grey,
-                                                  ),
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            8.0),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        Text(
-                                                          "Date of birth :",
-                                                          style: TextStyle(
-                                                            color:
-                                                                cardTextColor,
-                                                          ),
-                                                        ),
-                                                        Text(items[0].data[
-                                                                    "Passengers"]
-                                                                [index]
-                                                            ['DateOfBirth']),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  Divider(
-                                                    color: Colors.grey,
-                                                  ),
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            8.0),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        Text(
-                                                          "Status :",
-                                                          style: TextStyle(
-                                                            color:
-                                                                cardTextColor,
-                                                          ),
-                                                        ),
-                                                        Text(items[0].data[
-                                                                    "Passengers"]
-                                                                [index]
-                                                            ["QueueStatus"]),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
+                                    items[0].travelDetails == null
+                                        ? Container()
+                                        : Container(
+                                            constraints: BoxConstraints(
+                                              minHeight: 100,
+                                              maxHeight: 500,
                                             ),
-                                          );
-                                        },
-                                      ),
-                                    ),
+                                            child: ListView.builder(
+                                              shrinkWrap: true,
+                                              itemCount:
+                                                  items[0].travelDetails.length,
+                                              itemBuilder: (context, index) {
+                                                return Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(8.0),
+                                                  child: Card(
+                                                    child: Column(
+                                                      children: [
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .all(8.0),
+                                                          child: Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
+                                                            children: [
+                                                              Text(
+                                                                "Name :",
+                                                                style:
+                                                                    TextStyle(
+                                                                  color:
+                                                                      cardTextColor,
+                                                                ),
+                                                              ),
+                                                              Text(items[0]
+                                                                      .travelDetails[
+                                                                  index]["Name"]),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                        Divider(
+                                                          color: Colors.grey,
+                                                        ),
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .all(8.0),
+                                                          child: Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
+                                                            children: [
+                                                              Text(
+                                                                "Phone Number :",
+                                                                style:
+                                                                    TextStyle(
+                                                                  color:
+                                                                      cardTextColor,
+                                                                ),
+                                                              ),
+                                                              Text(items[0]
+                                                                          .travelDetails[
+                                                                      index][
+                                                                  "PhoneNumber"]),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                        Divider(
+                                                          color: Colors.grey,
+                                                        ),
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .all(8.0),
+                                                          child: Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
+                                                            children: [
+                                                              Text(
+                                                                "Nationality :",
+                                                                style:
+                                                                    TextStyle(
+                                                                  color:
+                                                                      cardTextColor,
+                                                                ),
+                                                              ),
+                                                              Text(items[0]
+                                                                          .travelDetails[
+                                                                      index][
+                                                                  "Nationality"]),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                        Divider(
+                                                          color: Colors.grey,
+                                                        ),
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .all(8.0),
+                                                          child: Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
+                                                            children: [
+                                                              Text(
+                                                                "Passport Number :",
+                                                                style:
+                                                                    TextStyle(
+                                                                  color:
+                                                                      cardTextColor,
+                                                                ),
+                                                              ),
+                                                              Text(items[0]
+                                                                          .travelDetails[
+                                                                      index][
+                                                                  "PassportNumber"]),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                        Divider(
+                                                          color: Colors.grey,
+                                                        ),
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .all(8.0),
+                                                          child: Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
+                                                            children: [
+                                                              Text(
+                                                                "Ticket Number :",
+                                                                style:
+                                                                    TextStyle(
+                                                                  color:
+                                                                      cardTextColor,
+                                                                ),
+                                                              ),
+                                                              Text(items[0].travelDetails[
+                                                                              index]
+                                                                          [
+                                                                          "TicketNumber"] !=
+                                                                      null
+                                                                  ? items[0].travelDetails[
+                                                                          index]
+                                                                      [
+                                                                      "TicketNumber"]
+                                                                  : "null"),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                        Divider(
+                                                          color: Colors.grey,
+                                                        ),
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .all(8.0),
+                                                          child: Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
+                                                            children: [
+                                                              Text(
+                                                                "Date of birth :",
+                                                                style:
+                                                                    TextStyle(
+                                                                  color:
+                                                                      cardTextColor,
+                                                                ),
+                                                              ),
+                                                              Text(items[0]
+                                                                          .travelDetails[
+                                                                      index][
+                                                                  "DateofBirth"]),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                        Divider(
+                                                          color: Colors.grey,
+                                                        ),
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .all(8.0),
+                                                          child: Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
+                                                            children: [
+                                                              Text(
+                                                                "Status :",
+                                                                style:
+                                                                    TextStyle(
+                                                                  color:
+                                                                      cardTextColor,
+                                                                ),
+                                                              ),
+                                                              Text(items[0]
+                                                                      .travelDetails[
+                                                                  index]["Status"]),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ),
                                   ],
                                 ),
                               ),
@@ -909,7 +959,222 @@ class _BookingDetailsState extends State<BookingDetails> {
                                       fontSize: 16.0,
                                     ),
                                   ),
-                                  children: [],
+                                  children: [
+                                    Container(
+                                      color: Colors.grey,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Text(
+                                                "Service type",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontFamily: 'Montserrat',
+                                                  fontSize: 14.0,
+                                                  fontWeight: FontWeight.normal,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ),
+                                          ),
+                                          Container(
+                                            height: 60,
+                                            child: VerticalDivider(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Text(
+                                                "Net Price",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontFamily: 'Montserrat',
+                                                  fontSize: 14.0,
+                                                  fontWeight: FontWeight.normal,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ),
+                                          ),
+                                          Container(
+                                            height: 60,
+                                            child: VerticalDivider(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Text(
+                                                "Gross Price",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontFamily: 'Montserrat',
+                                                  fontSize: 14.0,
+                                                  fontWeight: FontWeight.normal,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ),
+                                          ),
+                                          Container(
+                                            height: 60,
+                                            child: VerticalDivider(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Text(
+                                                "Profit",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontFamily: 'Montserrat',
+                                                  fontSize: 14.0,
+                                                  fontWeight: FontWeight.normal,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    items[0].costingDetails == null
+                                        ? Container()
+                                        : Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
+                                            children: List.generate(
+                                                items[0].costingDetails.length,
+                                                (index) {
+                                              return Container(
+                                                decoration: BoxDecoration(
+                                                  border: Border(
+                                                    top: BorderSide(
+                                                      color: Colors.grey[400],
+                                                    ),
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Expanded(
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                          horizontal: 8.0,
+                                                        ),
+                                                        child: Text(
+                                                          items[0].costingDetails[
+                                                                      index]
+                                                                  ["PaxType"] ??
+                                                              "",
+                                                          style: TextStyle(
+                                                            fontSize: 12.0,
+                                                          ),
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      height: 50,
+                                                      child: VerticalDivider(
+                                                        color: Colors.grey,
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                          horizontal: 8.0,
+                                                        ),
+                                                        child: Text(
+                                                          items[0].costingDetails[
+                                                                  index]
+                                                              ["NetPrice"],
+                                                          style: TextStyle(
+                                                            fontSize: 12.0,
+                                                          ),
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      height: 50,
+                                                      child: VerticalDivider(
+                                                        color: Colors.grey,
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                          horizontal: 8.0,
+                                                        ),
+                                                        child: Text(
+                                                          items[0].costingDetails[
+                                                                  index]
+                                                              ["GrossPrice"],
+                                                          style: TextStyle(
+                                                            fontSize: 12.0,
+                                                          ),
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      height: 50,
+                                                      child: VerticalDivider(
+                                                        color: Colors.grey,
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                          horizontal: 8.0,
+                                                        ),
+                                                        child: Text(
+                                                          items[0]
+                                                              .costingDetails[
+                                                                  index]
+                                                                  ["Profit"]
+                                                              .toString(),
+                                                          style: TextStyle(
+                                                            fontSize: 12.0,
+                                                          ),
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            }),
+                                          ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -930,153 +1195,152 @@ class _BookingDetailsState extends State<BookingDetails> {
                                     ),
                                   ),
                                   children: [
-                                    Container(
-                                      color: Colors.grey,
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
-                                              child: Text(
-                                                "Total Amount Payable",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontFamily:
-                                                      'Montserrat-Medium',
-                                                  fontSize: 12.0,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                                textAlign: TextAlign.center,
-                                              ),
-                                            ),
-                                          ),
-                                          Container(
-                                            height: 60,
-                                            child: VerticalDivider(
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
-                                              child: Text(
-                                                "Amount Recieved",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontFamily:
-                                                      'Montserrat-Medium',
-                                                  fontSize: 12.0,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                                textAlign: TextAlign.center,
-                                              ),
-                                            ),
-                                          ),
-                                          Container(
-                                            height: 60,
-                                            child: VerticalDivider(
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
-                                              child: Text(
-                                                "Amount Due",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontFamily:
-                                                      'Montserrat-Medium',
-                                                  fontSize: 12.0,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                                textAlign: TextAlign.center,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: items[0].data['SupplierInfo'][
-                                                      'TotalAgentNet_AgentCurr'] !=
-                                                  null
-                                              ? Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
-                                                  child: Text(
-                                                    items[0].data[
-                                                            'SupplierInfo'][
-                                                        'TotalAgentNet_AgentCurr'],
-                                                    style: TextStyle(
-                                                      fontSize: 12.0,
-                                                    ),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                )
-                                              : Text("null"),
-                                        ),
-                                        Container(
-                                          height: 50,
-                                          child: VerticalDivider(
+                                    items[0].paymentDetails == null
+                                        ? Container()
+                                        : Container(
                                             color: Colors.grey,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Expanded(
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            8.0),
+                                                    child: Text(
+                                                      "Total Amount Payable",
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontFamily:
+                                                            'Montserrat-Medium',
+                                                        fontSize: 12.0,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Container(
+                                                  height: 60,
+                                                  child: VerticalDivider(
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            8.0),
+                                                    child: Text(
+                                                      "Amount Recieved",
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontFamily:
+                                                            'Montserrat-Medium',
+                                                        fontSize: 12.0,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Container(
+                                                  height: 60,
+                                                  child: VerticalDivider(
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            8.0),
+                                                    child: Text(
+                                                      "Amount Due",
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontFamily:
+                                                            'Montserrat-Medium',
+                                                        fontSize: 12.0,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                        Expanded(
-                                          child: items[0].data['SupplierInfo'][
-                                                      'TotalPaidAmount_AgentCurr'] !=
-                                                  null
-                                              ? Padding(
+                                    items[0].paymentDetails == null
+                                        ? Container()
+                                        : Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Padding(
                                                   padding:
                                                       const EdgeInsets.all(8.0),
                                                   child: Text(
-                                                    items[0].data[
-                                                            'SupplierInfo'][
-                                                        'TotalPaidAmount_AgentCurr'],
+                                                    items[0].paymentDetails[
+                                                        "TotalPayableAmount"],
                                                     style: TextStyle(
                                                       fontSize: 12.0,
                                                     ),
                                                     textAlign: TextAlign.center,
                                                   ),
-                                                )
-                                              : Text("null"),
-                                        ),
-                                        Container(
-                                          height: 50,
-                                          child: VerticalDivider(
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: items[0].data['SupplierInfo'][
-                                                      'TotalAgentNet_AgentCurr'] !=
-                                                  null
-                                              ? Padding(
+                                                ),
+                                              ),
+                                              Container(
+                                                height: 50,
+                                                child: VerticalDivider(
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                              Expanded(
+                                                child: Padding(
                                                   padding:
                                                       const EdgeInsets.all(8.0),
                                                   child: Text(
-                                                    items[0].data[
-                                                            'SupplierInfo'][
-                                                        'TotalAgentNet_AgentCurr'],
+                                                    items[0].paymentDetails[
+                                                        "AmountRecived"],
                                                     style: TextStyle(
                                                       fontSize: 12.0,
                                                     ),
                                                     textAlign: TextAlign.center,
                                                   ),
-                                                )
-                                              : Text("null"),
-                                        ),
-                                      ],
-                                    ),
+                                                ),
+                                              ),
+                                              Container(
+                                                height: 50,
+                                                child: VerticalDivider(
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                              Expanded(
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(8.0),
+                                                  child: Text(
+                                                    items[0].paymentDetails[
+                                                        "AmountDue"],
+                                                    style: TextStyle(
+                                                      fontSize: 12.0,
+                                                    ),
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                   ],
                                 ),
                               ),
@@ -1091,7 +1355,7 @@ class _BookingDetailsState extends State<BookingDetails> {
                                     width: 28,
                                   ),
                                   title: Text(
-                                    "Booking Details",
+                                    "Booking Document",
                                     style: TextStyle(
                                       color: Colors.black,
                                       fontSize: 16.0,
@@ -1147,7 +1411,7 @@ class _BookingDetailsState extends State<BookingDetails> {
                                               padding:
                                                   const EdgeInsets.all(8.0),
                                               child: Text(
-                                                "Status",
+                                                "",
                                                 style: TextStyle(
                                                   color: Colors.white,
                                                 ),
@@ -1158,152 +1422,122 @@ class _BookingDetailsState extends State<BookingDetails> {
                                         ],
                                       ),
                                     ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: items[0]
-                                                  .receivedPayment
-                                                  .isEmpty
-                                              ? Text("null")
-                                              : items[0].receivedPayment[0]
-                                                          ['created_at'] !=
-                                                      null
-                                                  ? Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              8.0),
-                                                      child: Text(
-                                                        DateFormat(
-                                                                "dd MMM yyyy")
-                                                            .format(DateTime
-                                                                .parse(items[0]
-                                                                        .receivedPayment[0]
-                                                                    [
-                                                                    'created_at']))
-                                                            .toString(),
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                      ),
-                                                    )
-                                                  : Text("null"),
-                                        ),
-                                        Container(
-                                          height: 50,
-                                          child: VerticalDivider(
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: items[0]
-                                                  .receivedPayment
-                                                  .isEmpty
-                                              ? Text("null")
-                                              : items[0].receivedPayment[0]
-                                                          ['created_at'] !=
-                                                      null
-                                                  ? Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              8.0),
-                                                      child: Text(
-                                                        DateFormat(
-                                                                "dd MMM yyyy")
-                                                            .format(DateTime
-                                                                .parse(items[0]
-                                                                        .receivedPayment[0]
-                                                                    [
-                                                                    'created_at']))
-                                                            .toString(),
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                      ),
-                                                    )
-                                                  : Text("null"),
-                                        ),
-                                        Container(
-                                          height: 50,
-                                          child: VerticalDivider(
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: items[0]
-                                                  .receivedPayment
-                                                  .isEmpty
-                                              ? Text("null")
-                                              : items[0].receivedPayment[0]
-                                                          ['created_at'] !=
-                                                      null
-                                                  ? Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              8.0),
-                                                      child: Text(
-                                                        DateFormat(
-                                                                "dd MMM yyyy")
-                                                            .format(DateTime
-                                                                .parse(items[0]
-                                                                        .receivedPayment[0]
-                                                                    [
-                                                                    'created_at']))
-                                                            .toString(),
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                      ),
-                                                    )
-                                                  : Text("null"),
-                                        ),
-                                      ],
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                Icons.remove_red_eye_rounded,
-                                                color: Colors.blue,
-                                              ),
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.all(5.0),
-                                                child: Text(
-                                                  "View",
-                                                  style: TextStyle(
-                                                    color: Colors.blue,
-                                                    fontWeight: FontWeight.bold,
+                                    items[0].bookingDocument == null
+                                        ? Container()
+                                        : Column(
+                                            children: List.generate(
+                                                items[0].bookingDocument.length,
+                                                (index) {
+                                              return Container(
+                                                decoration: BoxDecoration(
+                                                  border: Border(
+                                                    top: BorderSide(
+                                                      color: Colors.grey[400],
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                Icons.print,
-                                                color: Colors.blue,
-                                              ),
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.all(5.0),
-                                                child: Text(
-                                                  "Print",
-                                                  style: TextStyle(
-                                                    color: Colors.blue,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Expanded(
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(8.0),
+                                                        child: Text(
+                                                          items[0].bookingDocument[
+                                                                  index]
+                                                              ["Description"],
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      height: 50,
+                                                      child: VerticalDivider(
+                                                        color: Colors.grey,
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(8.0),
+                                                        child: Text(
+                                                          items[0].bookingDocument[
+                                                                  index]
+                                                              ["IssuedOn"],
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      height: 50,
+                                                      child: VerticalDivider(
+                                                        color: Colors.grey,
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(8.0),
+                                                        child: GestureDetector(
+                                                          onTap: () {
+                                                            print("clicked");
+                                                            Navigator.push(
+                                                              context,
+                                                              MaterialPageRoute(
+                                                                builder:
+                                                                    (context) =>
+                                                                        BookingDocument(
+                                                                  url: items[0]
+                                                                              .bookingDocument[
+                                                                          index]
+                                                                      ["View"],
+                                                                ),
+                                                              ),
+                                                            );
+                                                          },
+                                                          child: Row(
+                                                            children: [
+                                                              Icon(
+                                                                Icons
+                                                                    .remove_red_eye_rounded,
+                                                                color:
+                                                                    Colors.blue,
+                                                              ),
+                                                              Padding(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                            .all(
+                                                                        5.0),
+                                                                child: Text(
+                                                                  "View",
+                                                                  style:
+                                                                      TextStyle(
+                                                                    color: Colors
+                                                                        .blue,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ),
-                                            ],
-                                          )
-                                        ],
-                                      ),
-                                    ),
+                                              );
+                                            }),
+                                          ),
                                   ],
                                 ),
                               ),
@@ -1313,6 +1547,7 @@ class _BookingDetailsState extends State<BookingDetails> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
+                                  //Cancel booking
                                   Expanded(
                                     child: Padding(
                                       padding: const EdgeInsets.all(8.0),
@@ -1322,7 +1557,12 @@ class _BookingDetailsState extends State<BookingDetails> {
                                           borderRadius:
                                               BorderRadius.circular(4.0),
                                         ),
-                                        onPressed: () {},
+                                        onPressed: () {
+                                          cancelBooking();
+                                          setState(() {
+                                            loading = true;
+                                          });
+                                        },
                                         child: Padding(
                                           padding: const EdgeInsets.symmetric(
                                             vertical: 17.0,
@@ -1332,13 +1572,14 @@ class _BookingDetailsState extends State<BookingDetails> {
                                             style: TextStyle(
                                               color: Colors.white,
                                               fontFamily: 'Montserrat-Medium',
-                                              fontSize: 12.0,
+                                              fontSize: 10.0,
                                             ),
                                           ),
                                         ),
                                       ),
                                     ),
                                   ),
+                                  //Issue ticket
                                   Expanded(
                                     child: Padding(
                                       padding: const EdgeInsets.all(8.0),
@@ -1348,7 +1589,12 @@ class _BookingDetailsState extends State<BookingDetails> {
                                           borderRadius:
                                               BorderRadius.circular(4.0),
                                         ),
-                                        onPressed: () {},
+                                        onPressed: () {
+                                          issueTicket();
+                                          setState(() {
+                                            loading = true;
+                                          });
+                                        },
                                         child: Padding(
                                           padding: const EdgeInsets.symmetric(
                                             vertical: 15.0,
@@ -1371,6 +1617,19 @@ class _BookingDetailsState extends State<BookingDetails> {
                         ),
                       ),
           ),
+          loading
+              ? Container(
+                  height: screenHeight,
+                  width: screenWidth,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                  ),
+                  child: Image.asset(
+                    'assets/images/Group 3025.png',
+                    height: screenHeight,
+                  ),
+                )
+              : Container(),
           (showDrawer)
               ? Container(
                   width: screenWidth,
@@ -1656,8 +1915,8 @@ class _BookingDetailsState extends State<BookingDetails> {
                       ),
                       Padding(
                         padding: EdgeInsets.only(
-                          left: 20,
-                          right: 20,
+                          left: 10,
+                          right: 10,
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,

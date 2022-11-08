@@ -19,6 +19,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:paged_vertical_calendar/paged_vertical_calendar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SearchPage extends StatefulWidget {
   final String tripType;
@@ -99,6 +100,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     this.currency,
   );
 
+  String token = "";
   String reqBody = "";
   bool showDrawer = false;
   bool showPrice = false;
@@ -170,6 +172,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    getToken();
     adult = adt;
     child = chd;
     infant = inf;
@@ -245,6 +248,15 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     return genNum;
   }
 
+  getToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        token = prefs.getString('token');
+      });
+    }
+  }
+
   searchFlight() async {
     var baseurl = "http://ibeapi.mobile.it4t.in/api/flight/";
     var normalSearch = "search";
@@ -280,8 +292,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       'ClientId': '35',
       'SessionId': '$sessionID',
       'Content-Type': 'application/json',
-      'Authorization':
-          "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIzIiwianRpIjoiODU3NDQxNDhjMzZjMTA2OTMyYWU2MTNlNjUwY2E2ZGYzOTA5OTgzZGNkOWRkZGQ0Mjc5MTAwM2FlMWFhZTQzZTc1NjI2ZjY2MDgxNmNjZWUiLCJpYXQiOjE2MjYxMDQxOTUsIm5iZiI6MTYyNjEwNDE5NSwiZXhwIjoxNjU3NjQwMTk1LCJzdWIiOiIzNCIsInNjb3BlcyI6W119.LEuM65-AfWp11wyZ98rDDuF0Hqd1hbDEeHJCATRsJGZFe8Pyq_XAD1xecHjigG0aLF3-Dxt1YXhnF3SbMJJhoYsi-hZFYqrT8aHU8La5WaLefw46PqrhNjpMws0m7_emKU3nCSm_oPjOAEpiPhlniwyG08ab6qFbW2HfyYg2alfdyxAadGdbPRbThG02D6mLrEie1deP4Hu25gcWVysufGP-rB2Zr6EZnhZ280iq3PA1PGMK9hBso-GMfFr7ae-KI-eC2iaFepW2SV9UIJI3F82G-g7c3efdV5PiviEkgPj7wK4ev18dzQ6tfiZDt6OcvEyasKA6biOZShCXYyvD0dZb1ut4yEoClqd15MC-KyDxdkZOmJRaCNXc0F5Iw0gZDGTvX1d7xWr7HfaOPlQsxhSvvbvZu3GEUjG2ouqEeMfSx2TRNWIUzAH9xYo1pm0x9k-79ui2jn4Fi3tw-HLJVIYqGiMyUaQ4oEc6Zdx9GT9drUHxXXl0xgWdqa2z_Kojk2v6-gSi7z1Qwj40XdRGh2fmw9Ci2mGajOesyYTqqSwyGf9hiV9NJ9FIVjkRFwxs3-80m2d8WrdDsJsozDEOYw1bywN8G_WUhC-ajB_2aWRffKtBr0b02cBRkWshm5avL0CnsLM7YYMP6HSm0AIDI16Hd6C8vxekPvN-zeDUAkQ",
+      'Authorization': "Bearer $token",
     };
     var request = http.Request('POST', Uri.parse('$baseurl' + '$extendedUrl'));
     request.body = reqBody;
@@ -3189,8 +3200,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                         ),
                         Padding(
                           padding: EdgeInsets.only(
-                            left: 20,
-                            right: 20,
+                            left: 10,
+                            right: 10,
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,

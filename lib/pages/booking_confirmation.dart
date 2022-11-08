@@ -16,12 +16,18 @@ class BookingConfirmation extends StatefulWidget {
   final String status;
   final Map bookingInfo;
   final String paymentMethod;
+  final String baseFare;
+  final String taxFee;
+  final String total;
   const BookingConfirmation({
     Key key,
     this.bookingRef,
     this.status,
     this.bookingInfo,
     this.paymentMethod,
+    this.baseFare,
+    this.taxFee,
+    this.total,
   }) : super(key: key);
 
   @override
@@ -30,6 +36,9 @@ class BookingConfirmation extends StatefulWidget {
         this.status,
         this.bookingInfo,
         this.paymentMethod,
+        this.baseFare,
+        this.taxFee,
+        this.total,
       );
 }
 
@@ -41,11 +50,17 @@ class _BookingConfirmationState extends State<BookingConfirmation> {
   final status;
   final bookingInfo;
   final paymentMethod;
+  final baseFare;
+  final taxFee;
+  final total;
   _BookingConfirmationState(
     this.bookingRef,
     this.status,
     this.bookingInfo,
     this.paymentMethod,
+    this.baseFare,
+    this.taxFee,
+    this.total,
   );
 
   @override
@@ -469,15 +484,15 @@ class _BookingConfirmationState extends State<BookingConfirmation> {
                   Row(
                     children: [
                       Icon(
-                        Icons.check,
-                        color: Colors.green,
+                        status == "failed" ? Icons.close : Icons.check,
+                        color: status == "failed" ? Colors.red : Colors.green,
                         size: 40.0,
                       ),
                       SizedBox(
                         width: 10.0,
                       ),
                       Text(
-                        "Booking Confirmed",
+                        "Booking $status",
                         style: TextStyle(
                           fontFamily: "Montserrat-Bold",
                           fontSize: 16.0,
@@ -545,7 +560,7 @@ class _BookingConfirmationState extends State<BookingConfirmation> {
                               children: [
                                 TextSpan(text: "Reservation Status: "),
                                 TextSpan(
-                                  text: "On Hold",
+                                  text: "$status",
                                   style: TextStyle(
                                     fontFamily: "Montserrat-Bold",
                                     color: primaryColor,
@@ -569,7 +584,13 @@ class _BookingConfirmationState extends State<BookingConfirmation> {
                   ),
                   Row(
                     children: [
-                      Icon(Icons.error_sharp),
+                      Icon(
+                        Icons.error_sharp,
+                        color: Colors.red,
+                      ),
+                      SizedBox(
+                        width: 20.0,
+                      ),
                       Text(
                         "Pending Payment",
                         style: TextStyle(
@@ -603,7 +624,7 @@ class _BookingConfirmationState extends State<BookingConfirmation> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text("Base Fare"),
-                      Text(" 288.83"),
+                      Text(" $baseFare"),
                     ],
                   ),
                   SizedBox(
@@ -612,8 +633,8 @@ class _BookingConfirmationState extends State<BookingConfirmation> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Base Fare"),
-                      Text(" 288.83"),
+                      Text("Tax & Fee"),
+                      Text(" $taxFee"),
                     ],
                   ),
                   SizedBox(
@@ -631,7 +652,7 @@ class _BookingConfirmationState extends State<BookingConfirmation> {
                         ),
                       ),
                       Text(
-                        " 288.83",
+                        " $total",
                         style: TextStyle(
                           color: Color(0xFF707070),
                           fontFamily: "Montserrat-Bold",
@@ -647,7 +668,12 @@ class _BookingConfirmationState extends State<BookingConfirmation> {
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => Bookings()));
+                          },
                           child: Padding(
                             padding: const EdgeInsets.all(20.0),
                             child: Text(

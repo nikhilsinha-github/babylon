@@ -5,6 +5,7 @@ import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 
 class DatePicker extends StatefulWidget {
   final String field;
+  final int i;
   final String sessionId;
   final String refNo;
   final String amount;
@@ -14,13 +15,17 @@ class DatePicker extends StatefulWidget {
   final bool idCardReq;
   final bool contactDetailsReq;
   final List paymentMethods;
-  final String dobSelected;
-  final String expDate;
   final List passengers;
+  final List travelerDetailsRecorded;
+  final String markup;
+  final String baseFare;
+  final String taxFee;
+  final String total;
 
   const DatePicker({
     Key key,
     this.field,
+    this.i,
     this.sessionId,
     this.refNo,
     this.amount,
@@ -30,14 +35,18 @@ class DatePicker extends StatefulWidget {
     this.idCardReq,
     this.contactDetailsReq,
     this.paymentMethods,
-    this.dobSelected,
-    this.expDate,
     this.passengers,
+    this.travelerDetailsRecorded,
+    this.markup,
+    this.baseFare,
+    this.taxFee,
+    this.total,
   }) : super(key: key);
 
   @override
   _DatePickerState createState() => _DatePickerState(
         this.field,
+        this.i,
         this.sessionId,
         this.refNo,
         this.amount,
@@ -47,16 +56,21 @@ class DatePicker extends StatefulWidget {
         this.idCardReq,
         this.contactDetailsReq,
         this.paymentMethods,
-        this.dobSelected,
-        this.expDate,
         this.passengers,
+        this.travelerDetailsRecorded,
+        this.markup,
+        this.baseFare,
+        this.taxFee,
+        this.total,
       );
 }
 
 class _DatePickerState extends State<DatePicker> {
   String dateSelected = "";
+  List travelDetailsDateSetup = [];
 
   final field;
+  final i;
   final sessionId;
   final refNo;
   final amount;
@@ -66,11 +80,15 @@ class _DatePickerState extends State<DatePicker> {
   final idCardReq;
   final contactDetailsReq;
   final paymentMethods;
-  final dobSelected;
-  final expDate;
+  final markup;
+  final baseFare;
+  final taxFee;
+  final total;
   final passengers;
+  final travelerDetailsRecorded;
   _DatePickerState(
     this.field,
+    this.i,
     this.sessionId,
     this.refNo,
     this.amount,
@@ -80,10 +98,22 @@ class _DatePickerState extends State<DatePicker> {
     this.idCardReq,
     this.contactDetailsReq,
     this.paymentMethods,
-    this.dobSelected,
-    this.expDate,
     this.passengers,
+    this.travelerDetailsRecorded,
+    this.markup,
+    this.baseFare,
+    this.taxFee,
+    this.total,
   );
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    print(travelerDetailsRecorded);
+    travelDetailsDateSetup = travelerDetailsRecorded;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -126,6 +156,9 @@ class _DatePickerState extends State<DatePicker> {
                     color: primaryColor,
                     onPressed: () {
                       if (field == "dob") {
+                        setState(() {
+                          travelDetailsDateSetup[i]["DOB"] = dateSelected;
+                        });
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
@@ -139,14 +172,20 @@ class _DatePickerState extends State<DatePicker> {
                               idCardReq: idCardReq,
                               contactDetailsReq: contactDetailsReq,
                               paymentMethods: paymentMethods,
-                              dobSelected: dateSelected,
-                              expDate: expDate,
                               passengers: passengers,
+                              travelerDetailsRecorded: travelDetailsDateSetup,
+                              markup: markup,
+                              baseFare: baseFare,
+                              taxFee: taxFee,
+                              total: total,
                             ),
                           ),
                         );
                       }
                       if (field == "expiry") {
+                        setState(() {
+                          travelDetailsDateSetup[i]["DocExpiry"] = dateSelected;
+                        });
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
@@ -160,9 +199,12 @@ class _DatePickerState extends State<DatePicker> {
                               idCardReq: idCardReq,
                               contactDetailsReq: contactDetailsReq,
                               paymentMethods: paymentMethods,
-                              dobSelected: dobSelected,
-                              expDate: dateSelected,
                               passengers: passengers,
+                              travelerDetailsRecorded: travelDetailsDateSetup,
+                              markup: markup,
+                              baseFare: baseFare,
+                              taxFee: taxFee,
+                              total: total,
                             ),
                           ),
                         );

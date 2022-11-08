@@ -53,19 +53,7 @@ class _AgencyInfoState extends State<AgencyInfo> {
         'GET',
         Uri.parse(
             'http://ibeapi.mobile.it4t.in/api/company/agencyinformation'));
-    request.fields.addAll({
-      'CompanyName': 'it4t sharda',
-      'VatNo': '',
-      'FirstName': 'sharda',
-      'LastName': 'sharan',
-      'CountryCode': 'IN',
-      'CityCode': '151615',
-      'Phone': '',
-      'Mobile': '7897620770',
-      'Email': 'sharda@gmail.com',
-      'PostCode': '',
-      'Address': 'sector63'
-    });
+
     // request.files.add(await http.MultipartFile.fromPath(
     //     'image', '/C:/Users/IT4T/Desktop/call.png'));
     request.headers.addAll(headers);
@@ -186,28 +174,18 @@ class _AgencyInfoState extends State<AgencyInfo> {
                                       backgroundColor: Colors.black,
                                       child: CircleAvatar(
                                         radius: 50,
-                                        backgroundImage: AssetImage(
-                                          "assets/images/77c5cb0f3449d66a37f66a464d1e9ed2.png",
-                                        ),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      top: 75,
-                                      left: 75,
-                                      child: CircleAvatar(
-                                        radius: 18,
-                                        backgroundColor:
-                                            Color.fromRGBO(249, 190, 6, 1),
-                                        child: Center(
-                                          child: IconButton(
-                                            icon: Icon(
-                                              Icons.edit,
-                                              color: Colors.black,
-                                              size: 18,
-                                            ),
-                                            onPressed: () {},
-                                          ),
-                                        ),
+                                        backgroundImage: items[0]
+                                                        .agencyInfo["Logo"] !=
+                                                    null &&
+                                                items[0].agencyInfo["Logo"] !=
+                                                    ""
+                                            ? NetworkImage(
+                                                "https://babylonxtra.com/images/flightimages/sm/sm/" +
+                                                    items[0].agencyInfo["Logo"],
+                                              )
+                                            : AssetImage(
+                                                "assets/images/77c5cb0f3449d66a37f66a464d1e9ed2.png",
+                                              ),
                                       ),
                                     ),
                                   ],
@@ -928,8 +906,8 @@ class _AgencyInfoState extends State<AgencyInfo> {
                       ),
                       Padding(
                         padding: EdgeInsets.only(
-                          left: 20,
-                          right: 20,
+                          left: 10,
+                          right: 10,
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,

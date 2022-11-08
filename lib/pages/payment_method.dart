@@ -22,31 +22,23 @@ class PaymentMethod extends StatefulWidget {
   final String sessionId;
   final String refNo;
   final String amt;
-  final String title;
-  final String firstName;
-  final String middleName;
-  final String lastName;
-  final String dob;
-  final String email;
-  final String passportNumber;
-  final String dialingCode;
-  final String phoneNo;
+  final List travelersDetails;
   final List paymentMethods;
+  final String markup;
+  final String baseFare;
+  final String taxFee;
+  final String total;
   const PaymentMethod({
     Key key,
     this.sessionId,
     this.refNo,
     this.amt,
-    this.title,
-    this.firstName,
-    this.middleName,
-    this.lastName,
-    this.dob,
-    this.email,
-    this.passportNumber,
-    this.dialingCode,
-    this.phoneNo,
+    this.travelersDetails,
     this.paymentMethods,
+    this.markup,
+    this.baseFare,
+    this.taxFee,
+    this.total,
   }) : super(key: key);
 
   @override
@@ -54,22 +46,18 @@ class PaymentMethod extends StatefulWidget {
         this.sessionId,
         this.refNo,
         this.amt,
-        this.title,
-        this.firstName,
-        this.middleName,
-        this.lastName,
-        this.dob,
-        this.email,
-        this.passportNumber,
-        this.dialingCode,
-        this.phoneNo,
+        this.travelersDetails,
         this.paymentMethods,
+        this.markup,
+        this.baseFare,
+        this.taxFee,
+        this.total,
       );
 }
 
 class _PaymentMethodState extends State<PaymentMethod> {
   bool showDrawer = false;
-  int index = 1;
+  int index = 0;
   bool loading = false;
   String token = "";
   bool accept = false;
@@ -77,30 +65,22 @@ class _PaymentMethodState extends State<PaymentMethod> {
   final sessionId;
   final refNo;
   final amt;
-  final title;
-  final firstName;
-  final middleName;
-  final lastName;
-  final dob;
-  final email;
-  final passportNumber;
-  final dialingCode;
-  final phoneNo;
+  final travelersDetails;
   final paymentMethods;
+  final markup;
+  final baseFare;
+  final taxFee;
+  final total;
   _PaymentMethodState(
     this.sessionId,
     this.refNo,
     this.amt,
-    this.title,
-    this.firstName,
-    this.middleName,
-    this.lastName,
-    this.dob,
-    this.email,
-    this.passportNumber,
-    this.dialingCode,
-    this.phoneNo,
+    this.travelersDetails,
     this.paymentMethods,
+    this.markup,
+    this.baseFare,
+    this.taxFee,
+    this.total,
   );
 
   @override
@@ -118,7 +98,7 @@ class _PaymentMethodState extends State<PaymentMethod> {
     }
   }
 
-  confirmBooking() async {
+  confirmBooking(methodName, method) async {
     var headers = {
       'SessionID': '$sessionId',
       'Authorization': 'Bearer $token',
@@ -130,37 +110,18 @@ class _PaymentMethodState extends State<PaymentMethod> {
       "BookingRequest": {
         "OfferID": "$refNo",
         "TotalOfferPrice": "",
-        "PaymentMethod": "CA",
-        "SpotMarkup": "20",
-        "Passenger": [
-          {
-            "Type": "ADT",
-            "PaxRef": "SH1",
-            "Title": "$title",
-            "FirstName": "$firstName",
-            "MiddleName": "$middleName",
-            "LastName": "$lastName",
-            "DOB": "$dob",
-            "DocType": "PP",
-            "DocNumber": "$passportNumber",
-            "DocExpiry": "2020-09-25",
-            "DocIssuingCountry": "IN",
-            "Nationality": "IN",
-            "EmailId": "$email",
-            "Phone": "$phoneNo",
-            "DialingCode": "$dialingCode",
-            "InfAsso": ""
-          }
-        ]
+        "PaymentMethod": "$method",
+        "SpotMarkup": "$markup",
+        "Passenger": travelersDetails,
       }
     });
+
     request.headers.addAll(headers);
 
     http.StreamedResponse response = await request.send();
-
+    print(response.stream);
     if (response.statusCode == 200) {
       var data = await response.stream.bytesToString();
-      print(data);
       var body = jsonDecode(data);
       var dataInJson = ConfirmedBookingModel.fromJson(body);
       setState(() {
@@ -173,7 +134,10 @@ class _PaymentMethodState extends State<PaymentMethod> {
             bookingRef: dataInJson.bookingRef,
             status: dataInJson.queueStatus,
             bookingInfo: dataInJson.bookingInfo,
-            paymentMethod: paymentMethods[index],
+            paymentMethod: methodName,
+            baseFare: baseFare,
+            taxFee: taxFee,
+            total: total,
           ),
         ),
         (route) => false,
@@ -836,15 +800,23 @@ class _PaymentMethodState extends State<PaymentMethod> {
                                           setState(() {
                                             loading = true;
                                           });
-                                          index == 0
-                                              ? Navigator.pushAndRemoveUntil(
+                                          paymentMethods[index]["Mode"] ==
+                                                  "Credit Card"
+                                              ? Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
                                                     builder: (context) =>
                                                         CardPayment(),
                                                   ),
-                                                  (route) => false)
-                                              : confirmBooking();
+                                                )
+                                              : confirmBooking(
+                                                  paymentMethods[index]["Mode"],
+                                                  paymentMethods[index]
+                                                              ["Mode"] ==
+                                                          "Hold PNR (Pay Later)"
+                                                      ? ""
+                                                      : paymentMethods[index]
+                                                          ["Value"]);
                                         }
                                       },
                                       child: Padding(

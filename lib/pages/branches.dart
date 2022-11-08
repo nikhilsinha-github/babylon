@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:babylon/main.dart';
 import 'package:babylon/pages/add_branch.dart';
+import 'package:babylon/pages/add_markup.dart';
 import 'package:babylon/pages/agencyInfo.dart';
 import 'package:babylon/pages/bookings.dart';
 import 'package:babylon/models/branchesDataModel.dart';
@@ -66,17 +67,6 @@ class _BranchesState extends State<Branches> {
     var headers = {'Authorization': 'Bearer $token'};
     var request = http.MultipartRequest(
         'GET', Uri.parse('http://ibeapi.mobile.it4t.in/api/company/branches'));
-    request.fields.addAll({
-      'BranchId': '32',
-      'Name': 'Main Branch',
-      'Address': 'sector63,',
-      'State': '',
-      'CountryCode': 'IN',
-      'CityCode': '10449',
-      'Postcode': '',
-      'Phone': '',
-      'Email': 'sharda@gmail.com'
-    });
 
     request.headers.addAll(headers);
 
@@ -396,103 +386,32 @@ class _BranchesState extends State<Branches> {
                                                 Row(
                                                   children: [
                                                     Expanded(
-                                                      child: Container(
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          border: Border(
-                                                            top: BorderSide(
-                                                              color:
-                                                                  Colors.grey,
-                                                            ),
-                                                            right: BorderSide(
-                                                              color:
-                                                                  Colors.grey,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        child: Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .center,
-                                                          children: [
-                                                            Padding(
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                          .all(
-                                                                      10.0),
-                                                              child: Text(
-                                                                "View",
-                                                                style:
-                                                                    TextStyle(
-                                                                  fontSize:
-                                                                      16.0,
-                                                                ),
+                                                      child: GestureDetector(
+                                                        onTap: () {
+                                                          Navigator.push(
+                                                            context,
+                                                            MaterialPageRoute(
+                                                              builder:
+                                                                  (context) =>
+                                                                      EditBranch(
+                                                                branchId: items[
+                                                                            index]
+                                                                        .agentBranchId ??
+                                                                    "",
                                                               ),
                                                             ),
-                                                            Padding(
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                      .all(8.0),
-                                                              child: Icon(
-                                                                FontAwesomeIcons
-                                                                    .solidEye,
+                                                          );
+                                                        },
+                                                        child: Container(
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            border: Border(
+                                                              top: BorderSide(
                                                                 color:
                                                                     Colors.grey,
-                                                                size: 20.0,
                                                               ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Expanded(
-                                                      child: Container(
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          border: Border(
-                                                            top: BorderSide(
-                                                              color:
-                                                                  Colors.grey,
                                                             ),
                                                           ),
-                                                        ),
-                                                        child: GestureDetector(
-                                                          onTap: () {
-                                                            Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                builder:
-                                                                    (context) =>
-                                                                        EditBranch(
-                                                                  branchId:
-                                                                      items[index]
-                                                                              .agentBranchId ??
-                                                                          "",
-                                                                  name: items[index]
-                                                                          .name ??
-                                                                      "",
-                                                                  address: items[
-                                                                              index]
-                                                                          .city ??
-                                                                      "",
-                                                                  state: '',
-                                                                  countryCode:
-                                                                      '',
-                                                                  postCode: '',
-                                                                  phone: items[index]
-                                                                              .phone ==
-                                                                          'null'
-                                                                      ? ""
-                                                                      : items[index]
-                                                                          .phone,
-                                                                  email: items[
-                                                                              index]
-                                                                          .email ??
-                                                                      "",
-                                                                ),
-                                                              ),
-                                                            );
-                                                          },
                                                           child: Row(
                                                             mainAxisAlignment:
                                                                 MainAxisAlignment
@@ -627,19 +546,17 @@ class _BranchesState extends State<Branches> {
                                           child: Container(
                                             color: Colors.white,
                                             child: ExpansionTile(
-                                              title:
-                                                  Text(markupItems[index].name),
+                                              title: Text(
+                                                markupItems[index].name,
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                ),
+                                              ),
                                               expandedCrossAxisAlignment:
                                                   CrossAxisAlignment.start,
                                               children: [
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
-                                                  child: Text(
-                                                    "Product: " +
-                                                        markupItems[index]
-                                                            .productType,
-                                                  ),
+                                                Divider(
+                                                  color: Colors.grey[700],
                                                 ),
                                                 Padding(
                                                   padding:
@@ -662,84 +579,32 @@ class _BranchesState extends State<Branches> {
                                                 Row(
                                                   children: [
                                                     Expanded(
-                                                      child: Container(
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          border: Border(
-                                                            top: BorderSide(
-                                                              color:
-                                                                  Colors.grey,
-                                                            ),
-                                                            right: BorderSide(
-                                                              color:
-                                                                  Colors.grey,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        child: Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .center,
-                                                          children: [
-                                                            Padding(
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                      .all(8.0),
-                                                              child:
-                                                                  Text("View"),
-                                                            ),
-                                                            Padding(
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                      .all(8.0),
-                                                              child: Icon(
-                                                                Icons
-                                                                    .remove_red_eye_rounded,
+                                                      child: GestureDetector(
+                                                        onTap: () {
+                                                          Navigator.push(
+                                                            context,
+                                                            MaterialPageRoute(
+                                                              builder:
+                                                                  (context) =>
+                                                                      EditMarkup(
+                                                                markupId:
+                                                                    markupItems[
+                                                                            index]
+                                                                        .markupId,
                                                               ),
                                                             ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Expanded(
-                                                      child: Container(
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          border: Border(
-                                                            top: BorderSide(
-                                                              color:
-                                                                  Colors.grey,
+                                                          );
+                                                        },
+                                                        child: Container(
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            border: Border(
+                                                              top: BorderSide(
+                                                                color:
+                                                                    Colors.grey,
+                                                              ),
                                                             ),
                                                           ),
-                                                        ),
-                                                        child: GestureDetector(
-                                                          onTap: () {
-                                                            Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                builder:
-                                                                    (context) =>
-                                                                        EditMarkup(
-                                                                  markupId: markupItems[
-                                                                          index]
-                                                                      .markupId,
-                                                                  productType:
-                                                                      markupItems[
-                                                                              index]
-                                                                          .productType,
-                                                                  markup: markupItems[
-                                                                          index]
-                                                                      .markup,
-                                                                  markupType: markupItems[
-                                                                          index]
-                                                                      .markupType,
-                                                                  name: markupItems[
-                                                                          index]
-                                                                      .name,
-                                                                ),
-                                                              ),
-                                                            );
-                                                          },
                                                           child: Row(
                                                             mainAxisAlignment:
                                                                 MainAxisAlignment
@@ -749,9 +614,15 @@ class _BranchesState extends State<Branches> {
                                                                 padding:
                                                                     const EdgeInsets
                                                                             .all(
-                                                                        8.0),
+                                                                        10.0),
                                                                 child: Text(
-                                                                    "Edit"),
+                                                                  "Edit",
+                                                                  style:
+                                                                      TextStyle(
+                                                                    fontSize:
+                                                                        16.0,
+                                                                  ),
+                                                                ),
                                                               ),
                                                               Padding(
                                                                 padding:
@@ -759,7 +630,11 @@ class _BranchesState extends State<Branches> {
                                                                             .all(
                                                                         8.0),
                                                                 child: Icon(
-                                                                  Icons.edit,
+                                                                  FontAwesomeIcons
+                                                                      .pencilAlt,
+                                                                  color: Colors
+                                                                      .grey,
+                                                                  size: 20.0,
                                                                 ),
                                                               ),
                                                             ],
@@ -779,46 +654,65 @@ class _BranchesState extends State<Branches> {
                                                   top: 10,
                                                   left: 8,
                                                 ),
-                                                child: Row(
-                                                  children: [
-                                                    Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              8.0),
-                                                      child: CircleAvatar(
-                                                        radius: 18,
-                                                        backgroundColor:
-                                                            Color.fromRGBO(
-                                                                249, 190, 6, 1),
-                                                        child: Center(
-                                                          child: IconButton(
-                                                            icon: Icon(
-                                                              Icons.add,
-                                                              color:
-                                                                  Colors.white,
-                                                              size: 20,
+                                                child: GestureDetector(
+                                                  onTap: () {
+                                                    Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                            builder: (context) =>
+                                                                AddMarkup()));
+                                                  },
+                                                  child: Row(
+                                                    children: [
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(8.0),
+                                                        child: CircleAvatar(
+                                                          radius: 18,
+                                                          backgroundColor:
+                                                              Color.fromRGBO(
+                                                                  249,
+                                                                  190,
+                                                                  6,
+                                                                  1),
+                                                          child: Center(
+                                                            child: IconButton(
+                                                              icon: Icon(
+                                                                Icons.add,
+                                                                color: Colors
+                                                                    .white,
+                                                                size: 20,
+                                                              ),
+                                                              onPressed: () {
+                                                                Navigator.push(
+                                                                    context,
+                                                                    MaterialPageRoute(
+                                                                        builder:
+                                                                            (context) =>
+                                                                                AddMarkup()));
+                                                              },
                                                             ),
-                                                            onPressed: () {},
                                                           ),
                                                         ),
                                                       ),
-                                                    ),
-                                                    Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              8.0),
-                                                      child: Text(
-                                                        "ADD NEW MARKUP",
-                                                        style: TextStyle(
-                                                          fontFamily:
-                                                              'Montserrat-Bold',
-                                                          fontSize: 16.0,
-                                                          fontWeight:
-                                                              FontWeight.bold,
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(8.0),
+                                                        child: Text(
+                                                          "ADD NEW MARKUP",
+                                                          style: TextStyle(
+                                                            fontFamily:
+                                                                'Montserrat-Bold',
+                                                            fontSize: 16.0,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
                                                         ),
                                                       ),
-                                                    ),
-                                                  ],
+                                                    ],
+                                                  ),
                                                 ),
                                               )
                                             : Container(),
@@ -1148,8 +1042,8 @@ class _BranchesState extends State<Branches> {
                       ),
                       Padding(
                         padding: EdgeInsets.only(
-                          left: 20,
-                          right: 20,
+                          left: 10,
+                          right: 10,
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,

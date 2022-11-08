@@ -27,6 +27,7 @@ class FlightDetails extends StatefulWidget {
   final String amt;
   final Map api;
   final String currency;
+  final String markup;
 
   const FlightDetails({
     Key key,
@@ -36,6 +37,7 @@ class FlightDetails extends StatefulWidget {
     this.amt,
     this.api,
     this.currency,
+    this.markup,
   }) : super(key: key);
   @override
   _FlightDetailsState createState() => _FlightDetailsState(
@@ -45,6 +47,7 @@ class FlightDetails extends StatefulWidget {
         this.amt,
         this.api,
         this.currency,
+        this.markup,
       );
 }
 
@@ -54,6 +57,13 @@ class _FlightDetailsState extends State<FlightDetails> {
   bool showDrawer = false;
   var genFunc = GenFunc();
   List paymentMethodListToSend = [];
+  String _sessionId = "";
+  String _refNo = "";
+  List _rsegment = [];
+  String _amt = "";
+  Map _api = {};
+  String _currency = "";
+  String _markup = "";
 
   final sessionId;
   final refNo;
@@ -61,6 +71,7 @@ class _FlightDetailsState extends State<FlightDetails> {
   final amt;
   final api;
   final currency;
+  final markup;
   _FlightDetailsState(
     this.sessionId,
     this.refNo,
@@ -68,12 +79,20 @@ class _FlightDetailsState extends State<FlightDetails> {
     this.amt,
     this.api,
     this.currency,
+    this.markup,
   );
 
   @override
   void initState() {
     super.initState();
     getToken();
+    _sessionId = sessionId;
+    _refNo = refNo;
+    _rsegment = rsegment;
+    _amt = amt;
+    _api = api;
+    _currency = currency;
+    _markup = markup;
   }
 
   getToken() async {
@@ -112,7 +131,8 @@ class _FlightDetailsState extends State<FlightDetails> {
           content: Text(dataInJson.message["Desc"]),
         ),
       );
-      if (dataInJson.message["Code"] == "SUCCESS") {
+      if (dataInJson.message["Code"] == "SUCCESS" ||
+          dataInJson.message["Code"] == "PRICECHANGE") {
         //booking confirmed
         var paymentMethodsListLength =
             dataInJson.additionalInfo["PaymentMode"].length;
@@ -140,7 +160,11 @@ class _FlightDetailsState extends State<FlightDetails> {
                       ? true
                       : false,
               paymentMethods: paymentMethodListToSend,
-              passengers: api["APL"]["AP"],
+              passengers: api["APL"]["AP"] ?? "",
+              markup: markup ?? "",
+              baseFare: api["TBF"].toString() ?? "",
+              taxFee: api["TT"].toString() ?? "",
+              total: api["TGP"] ?? "",
             ),
           ),
         );
@@ -484,8 +508,8 @@ class _FlightDetailsState extends State<FlightDetails> {
                       ),
                       Padding(
                         padding: EdgeInsets.only(
-                          left: 20,
-                          right: 20,
+                          left: 10,
+                          right: 10,
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -594,9 +618,9 @@ class _FlightDetailsState extends State<FlightDetails> {
                         ),
                         child: ListView.builder(
                           shrinkWrap: true,
-                          itemCount: rsegment.length + 1,
+                          itemCount: _rsegment.length + 1,
                           itemBuilder: (context, index) {
-                            return index != rsegment.length
+                            return index != _rsegment.length
                                 ? Padding(
                                     padding: const EdgeInsets.only(
                                       left: 10,
@@ -790,20 +814,18 @@ class _FlightDetailsState extends State<FlightDetails> {
                                               child: TextButton(
                                                 onPressed: () {
                                                   Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              FareBreakup(
-                                                                currency:
-                                                                    currency,
-                                                                baseFare:
-                                                                    api["TBF"],
-                                                                tax: api["TT"],
-                                                                total:
-                                                                    api["TGP"],
-                                                                ap: api["APL"]
-                                                                    ["AP"],
-                                                              )));
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          FareBreakup(
+                                                        currency: _currency,
+                                                        baseFare: _api["TBF"],
+                                                        tax: _api["TT"],
+                                                        total: _api["TGP"],
+                                                        ap: _api["APL"]["AP"],
+                                                      ),
+                                                    ),
+                                                  );
                                                 },
                                                 child: Text("Fare Breakup"),
                                               ),
@@ -812,10 +834,15 @@ class _FlightDetailsState extends State<FlightDetails> {
                                               child: TextButton(
                                                 onPressed: () {
                                                   Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              FareRules()));
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          FareRules(
+                                                        sessionId: _sessionId,
+                                                        refId: _refNo,
+                                                      ),
+                                                    ),
+                                                  );
                                                 },
                                                 child: Text("Fare Rules"),
                                               ),
@@ -833,17 +860,17 @@ class _FlightDetailsState extends State<FlightDetails> {
                                             IconButton(
                                               onPressed: () {
                                                 Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            AdditionalMarkup(
-                                                              currency:
-                                                                  currency,
-                                                              baseFare:
-                                                                  api["TBF"],
-                                                              tax: api["TT"],
-                                                              total: api["TGP"],
-                                                            )));
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        AdditionalMarkup(
+                                                      currency: _currency,
+                                                      baseFare: _api["TBF"],
+                                                      tax: _api["TT"],
+                                                      total: _api["TGP"],
+                                                    ),
+                                                  ),
+                                                );
                                               },
                                               icon: Icon(
                                                 Icons.add_circle_rounded,
@@ -857,12 +884,22 @@ class _FlightDetailsState extends State<FlightDetails> {
                                                     MaterialPageRoute(
                                                         builder: (context) =>
                                                             AdditionalMarkup(
+                                                              sessionId:
+                                                                  _sessionId,
+                                                              refNo: _refNo,
+                                                              rsegment:
+                                                                  _rsegment,
+                                                              amt: _amt,
+                                                              api: _api,
+                                                              markupFromFlightDetails:
+                                                                  _markup,
                                                               currency:
-                                                                  currency,
+                                                                  _currency,
                                                               baseFare:
-                                                                  api["TBF"],
-                                                              tax: api["TT"],
-                                                              total: api["TGP"],
+                                                                  _api["TBF"],
+                                                              tax: _api["TT"],
+                                                              total:
+                                                                  _api["TGP"],
                                                             )));
                                               },
                                               child: Text(
@@ -947,10 +984,10 @@ class _FlightDetailsState extends State<FlightDetails> {
                                                       CrossAxisAlignment.start,
                                                   children: [
                                                     Text(
-                                                      amt,
+                                                      _amt,
                                                       style: TextStyle(),
                                                     ),
-                                                    Text("$currency"),
+                                                    Text("$_currency"),
                                                   ],
                                                 ),
                                                 Row(

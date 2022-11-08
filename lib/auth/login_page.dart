@@ -227,6 +227,8 @@ class _LoginPageState extends State<LoginPage> {
                   child: Container(
                     height: 50.0,
                     child: TextField(
+                      obscureText: true,
+                      obscuringCharacter: '*',
                       style: TextStyle(
                         color: Colors.white,
                       ),

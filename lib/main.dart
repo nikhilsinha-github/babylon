@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:babylon/models/gdsSupplierModel.dart';
 import 'package:babylon/pages/agencyInfo.dart';
 import 'package:babylon/pages/arrival.dart';
 import 'package:babylon/auth/auth_landing_page.dart';
@@ -7,6 +8,8 @@ import 'package:babylon/pages/bookings.dart';
 import 'package:babylon/pages/branches.dart';
 import 'package:babylon/pages/calendar.dart';
 import 'package:babylon/pages/departure.dart';
+import 'package:babylon/pages/flightDetails.dart';
+import 'package:babylon/pages/importPNR.dart';
 import 'package:babylon/pages/passengers.dart';
 import 'package:babylon/pages/profile.dart';
 import 'package:babylon/pages/reports.dart';
@@ -151,6 +154,10 @@ class _HomePageState extends State<HomePage> {
     "First Class",
   ];
   List coachId = ["EC", "PE", "BC", "FC"];
+  String pnr = "";
+  String gDSSupplier = "";
+  String gDSSupplierId = "";
+  List<GdsSupplierModel> gdsSupplierList = List<GdsSupplierModel>();
 
   @override
   void initState() {
@@ -163,6 +170,13 @@ class _HomePageState extends State<HomePage> {
     if (arrivalDay != null) {
       arrivalDate = arrivalDay.toString().substring(0, 10);
     }
+    getGdsSupplier().then((value) {
+      if (mounted) {
+        setState(() {
+          gdsSupplierList.addAll(value);
+        });
+      }
+    });
   }
 
   getDashboardData() async {
@@ -195,6 +209,72 @@ class _HomePageState extends State<HomePage> {
     } else {
       print(response.reasonPhrase);
     }
+  }
+
+  getGdsSupplier() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        token = prefs.getString('token');
+      });
+    }
+    var headers = {'Authorization': 'Bearer $token'};
+    var request = http.Request(
+        'GET',
+        Uri.parse(
+            'http://ibeapi.mobile.it4t.in/api/company/supplierforimportpnr'));
+
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    var dataItems = List<GdsSupplierModel>();
+
+    if (response.statusCode == 200) {
+      var data = await response.stream.bytesToString();
+      var body = jsonDecode(data);
+      print(body);
+      for (var data in body) {
+        dataItems.add(GdsSupplierModel.fromJson(data));
+      }
+    } else {
+      print(response.reasonPhrase);
+    }
+
+    return dataItems;
+  }
+
+  selectGdsSupplier() {
+    return showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return ListView.builder(
+          itemCount: gdsSupplierList.length,
+          itemBuilder: (context, index) {
+            return GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+                setState(
+                  () {
+                    gDSSupplier = gdsSupplierList[index].company;
+                    gDSSupplierId = gdsSupplierList[index].supplierId;
+                  },
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  gdsSupplierList[index].company,
+                  style: TextStyle(
+                    fontSize: 16.0,
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -488,62 +568,16 @@ class _HomePageState extends State<HomePage> {
                           ),
                   ),
                 ),
-                Padding(
-                  padding: EdgeInsets.only(
-                    top: 15,
-                    left: 15,
-                    right: 15,
-                  ),
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Departure(
-                            tripNum: selected,
-                            arrivalPlace: arrivalPlace,
-                            aCitC: arrCityCode,
-                            aConC: arrDet,
-                            departureDate: DateTime.parse(departureDate),
-                            arrivalDate: DateTime.parse(arrivalDate),
-                            adt: adt,
-                            chd: chd,
-                            inf: inf,
-                            tc: coachCode,
-                          ),
+                //Departure city
+                selected != 3
+                    ? Padding(
+                        padding: EdgeInsets.only(
+                          top: 15,
+                          left: 15,
+                          right: 15,
                         ),
-                      );
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(
-                          color: Colors.grey[400],
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: ListTile(
-                        leading: Image.asset(
-                          "assets/images/flight_takeoff.png",
-                          color: takeOffPlace == "Country, City, Airport"
-                              ? Colors.grey[600]
-                              : Colors.black,
-                        ),
-                        title: Text(
-                          "$takeOffPlace",
-                          style: TextStyle(
-                            color: takeOffPlace == "Country, City, Airport"
-                                ? Colors.grey[600]
-                                : Colors.black,
-                          ),
-                        ),
-                        trailing: IconButton(
-                          icon: Icon(
-                            Icons.expand_more,
-                            color: Colors.grey[600],
-                            size: 32,
-                          ),
-                          onPressed: () {
+                        child: GestureDetector(
+                          onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -562,67 +596,91 @@ class _HomePageState extends State<HomePage> {
                               ),
                             );
                           },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              border: Border.all(
+                                color: Colors.grey[400],
+                              ),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: ListTile(
+                              leading: Image.asset(
+                                "assets/images/flight_takeoff.png",
+                                color: takeOffPlace == "Country, City, Airport"
+                                    ? Colors.grey[600]
+                                    : Colors.black,
+                              ),
+                              title: Text(
+                                "$takeOffPlace",
+                                style: TextStyle(
+                                  color:
+                                      takeOffPlace == "Country, City, Airport"
+                                          ? Colors.grey[600]
+                                          : Colors.black,
+                                ),
+                              ),
+                              trailing: IconButton(
+                                icon: Icon(
+                                  Icons.expand_more,
+                                  color: Colors.grey[600],
+                                  size: 32,
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => Departure(
+                                        tripNum: selected,
+                                        arrivalPlace: arrivalPlace,
+                                        aCitC: arrCityCode,
+                                        aConC: arrDet,
+                                        departureDate:
+                                            DateTime.parse(departureDate),
+                                        arrivalDate:
+                                            DateTime.parse(arrivalDate),
+                                        adt: adt,
+                                        chd: chd,
+                                        inf: inf,
+                                        tc: coachCode,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.all(15.0),
+                        child: Container(
+                          color: Colors.white,
+                          child: TextFormField(
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(),
+                              hintText: "PNR",
+                            ),
+                            onChanged: (val) {
+                              if (mounted) {
+                                setState(() {
+                                  pnr = val;
+                                });
+                              }
+                            },
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(
-                    top: 15,
-                    left: 15,
-                    right: 15,
-                  ),
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Arrival(
-                            tripNum: selected,
-                            departurePlace: takeOffPlace,
-                            dCitC: depCityCode,
-                            dConC: depDet,
-                            departureDate: DateTime.parse(departureDate),
-                            arrivalDate: DateTime.parse(arrivalDate),
-                            adt: adt,
-                            chd: chd,
-                            inf: inf,
-                            tc: coachCode,
-                          ),
+                //Arrival city
+                selected != 3
+                    ? Padding(
+                        padding: EdgeInsets.only(
+                          top: 15,
+                          left: 15,
+                          right: 15,
                         ),
-                      );
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(
-                          color: Colors.grey[400],
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: ListTile(
-                        leading: Image.asset(
-                          'assets/images/flight_landing.png',
-                          color: takeOffPlace == "Country, City, Airport"
-                              ? Colors.grey[600]
-                              : Colors.black,
-                        ),
-                        title: Text(
-                          "$arrivalPlace",
-                          style: TextStyle(
-                            color: arrivalPlace == "Country, City, Airport"
-                                ? Colors.grey[600]
-                                : Colors.black,
-                          ),
-                        ),
-                        trailing: IconButton(
-                          icon: Icon(
-                            Icons.expand_more,
-                            color: Colors.grey[600],
-                            size: 32,
-                          ),
-                          onPressed: () {
+                        child: GestureDetector(
+                          onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -641,298 +699,407 @@ class _HomePageState extends State<HomePage> {
                               ),
                             );
                           },
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Container(
-                  width: screenWidth,
-                  child: Row(
-                    children: [
-                      //Departure Date
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => Calendar(
-                                  tripNum: selected,
-                                  p1: takeOffPlace,
-                                  dCitC: depCityCode,
-                                  dConC: depDet,
-                                  p2: arrivalPlace,
-                                  aCitC: arrCityCode,
-                                  aConC: arrDet,
-                                  departureDate: DateTime.parse(departureDate),
-                                  arrivalDate: DateTime.parse(arrivalDate),
-                                  returnDate: "Departure Date",
-                                  adt: adt,
-                                  chd: chd,
-                                  inf: inf,
-                                  tc: coachCode,
-                                ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              border: Border.all(
+                                color: Colors.grey[400],
                               ),
-                            );
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                              top: 10,
-                              left: 15,
-                              right: 5,
+                              borderRadius: BorderRadius.circular(4),
                             ),
-                            child: Container(
-                              height: 50,
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: Colors.grey,
-                                ),
-                                borderRadius: BorderRadius.circular(4),
+                            child: ListTile(
+                              leading: Image.asset(
+                                'assets/images/flight_landing.png',
+                                color: takeOffPlace == "Country, City, Airport"
+                                    ? Colors.grey[600]
+                                    : Colors.black,
                               ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: FaIcon(
-                                      FontAwesomeIcons.solidCalendarAlt,
-                                      color: (departureDay == DateTime(2000))
-                                          ? Colors.grey
-                                          : Colors.black87,
+                              title: Text(
+                                "$arrivalPlace",
+                                style: TextStyle(
+                                  color:
+                                      arrivalPlace == "Country, City, Airport"
+                                          ? Colors.grey[600]
+                                          : Colors.black,
+                                ),
+                              ),
+                              trailing: IconButton(
+                                icon: Icon(
+                                  Icons.expand_more,
+                                  color: Colors.grey[600],
+                                  size: 32,
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => Arrival(
+                                        tripNum: selected,
+                                        departurePlace: takeOffPlace,
+                                        dCitC: depCityCode,
+                                        dConC: depDet,
+                                        departureDate:
+                                            DateTime.parse(departureDate),
+                                        arrivalDate:
+                                            DateTime.parse(arrivalDate),
+                                        adt: adt,
+                                        chd: chd,
+                                        inf: inf,
+                                        tc: coachCode,
+                                      ),
                                     ),
-                                  ),
-                                  (departureDay == DateTime(2000))
-                                      ? Text(
-                                          "Departure date",
-                                          style: TextStyle(
-                                            color: Colors.grey[400],
-                                          ),
-                                        )
-                                      : Text(DateFormat("dd MMM yyyy").format(
-                                          DateTime.parse(departureDate))),
-                                ],
+                                  );
+                                },
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      //Return date
-                      Expanded(
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8.0,
+                          horizontal: 15,
+                        ),
                         child: GestureDetector(
                           onTap: () {
-                            if (selected != 0) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => Calendar(
-                                    tripNum: selected,
-                                    p1: takeOffPlace,
-                                    dCitC: depCityCode,
-                                    dConC: depDet,
-                                    p2: arrivalPlace,
-                                    aCitC: arrCityCode,
-                                    aConC: arrDet,
-                                    departureDate:
-                                        DateTime.parse(departureDate),
-                                    arrivalDate: DateTime.parse(arrivalDate),
-                                    returnDate: "Arrival Date",
-                                    adt: adt,
-                                    chd: chd,
-                                    inf: inf,
-                                    tc: coachCode,
-                                  ),
-                                ),
-                              );
-                            }
+                            selectGdsSupplier();
                           },
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                              top: 10,
-                              left: 5,
-                              right: 15,
-                            ),
-                            child: Container(
-                              height: 50,
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: selected == 0
-                                      ? Colors.grey[200]
-                                      : Colors.grey,
-                                ),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: FaIcon(
-                                      FontAwesomeIcons.solidCalendarAlt,
-                                      color: selected == 0
-                                          ? Colors.grey[200]
-                                          : ((arrivalDay == DateTime(2000))
-                                              ? Colors.grey
-                                              : Colors.black87),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  height: 50.0,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    border: Border.all(
+                                      color: Colors.grey,
                                     ),
+                                    borderRadius: BorderRadius.circular(4.0),
                                   ),
-                                  selected == 0
-                                      ? Text(
-                                          "Return date",
-                                          style: TextStyle(
-                                            color: Colors.grey[200],
-                                          ),
-                                        )
-                                      : ((arrivalDay == DateTime(2000))
-                                          ? Text(
-                                              "Return date",
-                                              style: TextStyle(
-                                                color: Colors.grey[400],
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child:
+                                        gDSSupplier != "" && gDSSupplier != null
+                                            ? Text(
+                                                gDSSupplier,
+                                                style: TextStyle(
+                                                  fontSize: 16.0,
+                                                ),
+                                              )
+                                            : Text(
+                                                "",
                                               ),
-                                            )
-                                          : Text(DateFormat("dd MMM yyyy")
-                                              .format(DateTime.parse(
-                                                  arrivalDate)))),
-                                ],
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                //
-                Container(
-                  width: screenWidth,
-                  child: Row(
-                    children: [
-                      //passenger
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(
-                            top: 10,
-                            left: 15,
-                            right: 5,
-                          ),
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => Passenger(
-                                    tripNum: selected,
-                                    p1: takeOffPlace,
-                                    dCitC: depCityCode,
-                                    dConC: depDet,
-                                    p2: arrivalPlace,
-                                    aCitC: arrCityCode,
-                                    aConC: arrDet,
-                                    departureDate:
-                                        DateTime.parse(departureDate),
-                                    arrivalDate: DateTime.parse(arrivalDate),
-                                    adt: adt,
-                                    chd: chd,
-                                    inf: inf,
-                                    tc: coachCode,
+                //Dates
+                selected != 3
+                    ? Container(
+                        width: screenWidth,
+                        child: Row(
+                          children: [
+                            //Departure Date
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => Calendar(
+                                        tripNum: selected,
+                                        p1: takeOffPlace,
+                                        dCitC: depCityCode,
+                                        dConC: depDet,
+                                        p2: arrivalPlace,
+                                        aCitC: arrCityCode,
+                                        aConC: arrDet,
+                                        departureDate:
+                                            DateTime.parse(departureDate),
+                                        arrivalDate:
+                                            DateTime.parse(arrivalDate),
+                                        returnDate: "Departure Date",
+                                        adt: adt,
+                                        chd: chd,
+                                        inf: inf,
+                                        tc: coachCode,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 10,
+                                    left: 15,
+                                    right: 5,
                                   ),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              height: 50,
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: Colors.grey,
-                                ),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Icon(
-                                      Icons.group,
-                                      color: (adt + chd + inf) == 0
-                                          ? Colors.grey[600]
-                                          : Colors.black,
+                                  child: Container(
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Colors.grey,
+                                      ),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: FaIcon(
+                                            FontAwesomeIcons.solidCalendarAlt,
+                                            color:
+                                                (departureDay == DateTime(2000))
+                                                    ? Colors.grey
+                                                    : Colors.black87,
+                                          ),
+                                        ),
+                                        (departureDay == DateTime(2000))
+                                            ? Text(
+                                                "Departure date",
+                                                style: TextStyle(
+                                                  color: Colors.grey[400],
+                                                ),
+                                              )
+                                            : Text(DateFormat("dd MMM yyyy")
+                                                .format(DateTime.parse(
+                                                    departureDate))),
+                                      ],
                                     ),
                                   ),
-                                  Text(
-                                    "${(adt + chd + inf).toString()} Passenger",
-                                    style: TextStyle(
-                                      color: (adt + chd + inf) == 0
-                                          ? Colors.grey[600]
-                                          : Colors.black,
+                                ),
+                              ),
+                            ),
+                            //Return date
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  if (selected != 0) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => Calendar(
+                                          tripNum: selected,
+                                          p1: takeOffPlace,
+                                          dCitC: depCityCode,
+                                          dConC: depDet,
+                                          p2: arrivalPlace,
+                                          aCitC: arrCityCode,
+                                          aConC: arrDet,
+                                          departureDate:
+                                              DateTime.parse(departureDate),
+                                          arrivalDate:
+                                              DateTime.parse(arrivalDate),
+                                          returnDate: "Arrival Date",
+                                          adt: adt,
+                                          chd: chd,
+                                          inf: inf,
+                                          tc: coachCode,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 10,
+                                    left: 5,
+                                    right: 15,
+                                  ),
+                                  child: Container(
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: selected == 0
+                                            ? Colors.grey[200]
+                                            : Colors.grey,
+                                      ),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: FaIcon(
+                                            FontAwesomeIcons.solidCalendarAlt,
+                                            color: selected == 0
+                                                ? Colors.grey[200]
+                                                : ((arrivalDay ==
+                                                        DateTime(2000))
+                                                    ? Colors.grey
+                                                    : Colors.black87),
+                                          ),
+                                        ),
+                                        selected == 0
+                                            ? Text(
+                                                "Return date",
+                                                style: TextStyle(
+                                                  color: Colors.grey[200],
+                                                ),
+                                              )
+                                            : ((arrivalDay == DateTime(2000))
+                                                ? Text(
+                                                    "Return date",
+                                                    style: TextStyle(
+                                                      color: Colors.grey[400],
+                                                    ),
+                                                  )
+                                                : Text(DateFormat("dd MMM yyyy")
+                                                    .format(DateTime.parse(
+                                                        arrivalDate)))),
+                                      ],
                                     ),
                                   ),
-                                ],
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                      ),
-                      //Economy
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(
-                            top: 10,
-                            left: 5,
-                            right: 15,
-                          ),
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => TravelClass(
-                                    tripNum: selected,
-                                    p1: takeOffPlace,
-                                    dCitC: depCityCode,
-                                    dConC: depDet,
-                                    p2: arrivalPlace,
-                                    aCitC: arrCityCode,
-                                    aConC: arrDet,
-                                    departureDate:
-                                        DateTime.parse(departureDate),
-                                    arrivalDate: DateTime.parse(arrivalDate),
-                                    adt: adt,
-                                    chd: chd,
-                                    inf: inf,
-                                    tc: coachCode,
+                      )
+                    : Container(),
+                //passenger & travel class
+                selected != 3
+                    ? Container(
+                        width: screenWidth,
+                        child: Row(
+                          children: [
+                            //passenger
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                  top: 10,
+                                  left: 15,
+                                  right: 5,
+                                ),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => Passenger(
+                                          tripNum: selected,
+                                          p1: takeOffPlace,
+                                          dCitC: depCityCode,
+                                          dConC: depDet,
+                                          p2: arrivalPlace,
+                                          aCitC: arrCityCode,
+                                          aConC: arrDet,
+                                          departureDate:
+                                              DateTime.parse(departureDate),
+                                          arrivalDate:
+                                              DateTime.parse(arrivalDate),
+                                          adt: adt,
+                                          chd: chd,
+                                          inf: inf,
+                                          tc: coachCode,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Colors.grey,
+                                      ),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Icon(
+                                            Icons.group,
+                                            color: (adt + chd + inf) == 0
+                                                ? Colors.grey[600]
+                                                : Colors.black,
+                                          ),
+                                        ),
+                                        Text(
+                                          "${(adt + chd + inf).toString()} Passenger",
+                                          style: TextStyle(
+                                            color: (adt + chd + inf) == 0
+                                                ? Colors.grey[600]
+                                                : Colors.black,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              );
-                            },
-                            child: Container(
-                              height: 50,
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: Colors.grey,
-                                ),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Icon(Icons.card_travel),
-                                  ),
-                                  Text(
-                                    "${coach[coachCode]}",
-                                    style: TextStyle(),
-                                  ),
-                                ],
                               ),
                             ),
-                          ),
+                            //Economy
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                  top: 10,
+                                  left: 5,
+                                  right: 15,
+                                ),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => TravelClass(
+                                          tripNum: selected,
+                                          p1: takeOffPlace,
+                                          dCitC: depCityCode,
+                                          dConC: depDet,
+                                          p2: arrivalPlace,
+                                          aCitC: arrCityCode,
+                                          aConC: arrDet,
+                                          departureDate:
+                                              DateTime.parse(departureDate),
+                                          arrivalDate:
+                                              DateTime.parse(arrivalDate),
+                                          adt: adt,
+                                          chd: chd,
+                                          inf: inf,
+                                          tc: coachCode,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Colors.grey,
+                                      ),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Icon(Icons.card_travel),
+                                        ),
+                                        Text(
+                                          "${coach[coachCode]}",
+                                          style: TextStyle(),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                ),
+                      )
+                    : Container(),
                 //search
                 Padding(
                   padding: EdgeInsets.only(
@@ -1002,6 +1169,28 @@ class _HomePageState extends State<HomePage> {
                                   tc: coachId[coachCode],
                                   tcIndex: coachCode,
                                   currency: currency,
+                                ),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content:
+                                  Text("Please fill all the required fields"),
+                            ));
+                          }
+                        }
+                        if (selected == 3) {
+                          if (pnr != null ||
+                              pnr != "" ||
+                              gDSSupplier != null ||
+                              gDSSupplier != "") {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ImportPNR(
+                                  pnr: pnr,
+                                  gDSSupplier: gDSSupplier,
+                                  gDSSupplierId: gDSSupplierId,
                                 ),
                               ),
                             );

@@ -1,11 +1,69 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FareRules extends StatefulWidget {
+  final String sessionId;
+  final String refId;
+  const FareRules({
+    Key key,
+    this.sessionId,
+    this.refId,
+  }) : super(key: key);
   @override
-  _FareRulesState createState() => _FareRulesState();
+  _FareRulesState createState() => _FareRulesState(
+        this.sessionId,
+        this.refId,
+      );
 }
 
 class _FareRulesState extends State<FareRules> {
+  String token = "";
+  final sessionId;
+  final refId;
+  _FareRulesState(
+    this.sessionId,
+    this.refId,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    getToken();
+    print(sessionId);
+    print(refId);
+  }
+
+  getToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        token = prefs.getString('token');
+      });
+    }
+    fareRules();
+  }
+
+  fareRules() async {
+    var headers = {
+      'SessionID': '$sessionId',
+      'Authorization': 'Bearer $token',
+    };
+    var request = http.MultipartRequest(
+        'POST', Uri.parse('http://ibeapi.mobile.it4t.in/api/flight/farerule'));
+    request.fields.addAll({'OfferID': '$refId'});
+
+    request.headers.addAll(headers);
+
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      print(await response.stream.bytesToString());
+    } else {
+      print(response.reasonPhrase);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
